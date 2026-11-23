@@ -11,7 +11,7 @@ machine paths are elided.
 |---|---|---|---|---|---|
 | 1 | Missing crash-dump directory caused the assert | `mkdir` the directory (runs 7–8); `diskpart`/`mountvol` + `subst` (run 9); create it in the game folder (run 10) | Runs 7–8: `mkdir` on read-only install media failed silently, so nothing was ever created — null. Run 9 never booted (script stalled). Run 10 listed the `LocalDumps` directory as present **before** the boot and the crash was unchanged. | null test (7–8), no run (9), **falsified** (10) | a guest directory is created **and** `Test-Path` is printed in the same run |
 | 2 | Moving the CD drive letter (diskpart, subst, `Set-CimInstance`) would fix it | reassign the optical letter (runs 7–8); run 9 stalled before launch | The volume stayed on its original letter (0 bytes free, install ISO) and the call returned nothing; xcl already maps the console drive to the game folder, so the path resolves inside it. | null test | never — read the emulator mount table instead of moving guest letters |
-| 3 | Missing `movies.rpf` caused the stop | stage 8.8 GB `movies.rpf` (run 24) | Archived run-24 log, line 1366: `GetFileAttributesW` on the console `movies.rpf` returned `0x20` (present); the crash was still `+0x1CE6E13` one line later. | **falsified** | the failing predicate is shown to read an asset handle rather than a settings map |
+| 3 | Missing `movies.rpf` caused the stop | stage 8.8 GB `movies.rpf` (run 24) | Run record only — no artifact survives: `GetFileAttributesW` on the console `movies.rpf` returned `0x20` (present) and the crash was still `+0x1CE6E13` immediately after. | **falsified** (run record) | the failing predicate is shown to read an asset handle rather than a settings map |
 | 4 | More game data (script, shaders, textures, packs) would clear it | stage `script`/`shaders`/`textures`/`packs` archives plus three more (run 26) | Archived run-26 log, line 1367, and that run's report agree byte-for-byte: `+0x1CE6E13`, `called_stubs: []`, after 5.1 GB more data. | **falsified** | a probe shows the stop consuming an asset, not a runtime map |
 | 5 | The XPackage identifier length was the gate | return the 30-char identity in a 33-byte buffer (run 16) | Archived run-16 log, line 1300: `GetCurrentProcessPackageIdentifier -> '<id>' (30 chars, buffer 33) -> 0x00000000`; line 1303 still `+0x1CE6E13`. | **falsified** | a caller is logged rejecting the *contents* of the id, not its length |
 | 6 | `XPackageIsPackagedProcess = true` was the gate | force the answer to false (run 17) | Run 17 returned false and the stop did not move; runs 16 and 26 returned true (archived run-16 log line 1299, run-26 log line 1361) with the same stop — the bool is not the gate in either direction. | **falsified** | the caller's branch on the bool is logged |
@@ -32,9 +32,10 @@ machine paths are elided.
    That is a different failure, not a fix: it says the file is opened and its bytes are used. Needed: a
    size comparison against the shipped asset and a read of the consumer at `+0x2237320`.
 
-**Artifact gaps (do not read as disproof).** The run archive holds no log or report for runs 17, 22,
-24 and 28, and the archived run table stops at run 14, so 17 and 28 rest on the run record alone. The
-run-16 report is also missing, so run-16 counters come from run 14 (same RVA, same call path).
+**Artifact gaps (do not read as disproof).** The run archive holds no log or report for runs 10, 17,
+22, 24, 25, 27, 28 and 30, and the archived run table stops at run 14, so each of those rests on the run
+record alone. The run-16 report is also missing, so run-16 counters come from run 14 (same RVA, same
+call path).
 
 ## What these tests do not prove
 

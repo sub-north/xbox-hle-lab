@@ -49,7 +49,7 @@ our records, which breaks the L0 evidence chain and our own "no hash, no run" ru
 | xcl 0.1.0 loads a shipped Xbox Series GDK title and reaches its entry point (`+0x56A1EC8`) on Windows, on a real RTX GPU in a GPU-PV VM | "the title runs / boots / works / is playable on PC"; any fps |
 | 9 HLE DLL surfaces and 7 GDK API classes answer queries; 6 imports stay stubs and **0** are called | "engine initialised" — the title's own block says `System Init`, `Frame: 0` |
 | UMA opened (3 sparse windows, 12 GiB VA + 512 MB coherent) and `ID3D12Device14`/`ID3D12Heap1` created | "shaders execute" (`shaders.unique: 0`); "audio works" (`engines: 0`) |
-| First failure reproducible twice at `+0x1CE6E13` with `called_stubs: []`; the run-16 change landed and the stop did not move | that a missing export caused it — a title-internal assert on a derived handle (`rdx=0xF2000000001`); an ABI mismatch is *inferred* only (public report, reported) |
+| First failure reproducible twice at `+0x1CE6E13` with `called_stubs: []`; the run-16 change landed and the stop did not move | that a missing export caused it — a title-internal assert on a derived handle (`rdx=0x173400000001`); an ABI mismatch is *inferred* only (public report, reported) |
 | The title's own crash reporter runs (16,431,851 B payload, 30+ threads enumerated) | publish the package identity, host paths, crash-endpoint URL/DSN, or the minidump |
 
 ## 4. Next three artifacts, in order (L1 → L2)

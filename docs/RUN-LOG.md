@@ -23,7 +23,7 @@ the environment, and repeating it is a wasted boot.
 | 7 | run 6 | dump folder at `D:\LocalDumps` (guest) | `+0x2237178` (unchanged) | `mkdir` failed silently: `D:` was the Windows install ISO (`DriveType 5`, read-only), not writable media | **NULL TEST** — hypothesis never tested; no evidence about dump collection either way |
 | 8 | run 6 | move the CD volume to another letter via CIM | `+0x2237178` (unchanged) | volume still at `D:` after the call; `mkdir` still failed | **NULL TEST** — hypothesis never tested |
 | 9 | run 6 | `diskpart`/`mountvol` + `subst` | — (no boot) | script stalled; the game was never started | **NULL — no run**; settle nothing, cite nothing |
-| 10 | run 6 | `<game>\LocalDumps` (xcl maps `D:` to `{game}`) | `+0x2237178` (unchanged) | directory listed and confirmed present before the boot; same crash, same `rax=0x0` | verified — dump-directory hypothesis **falsified** |
+| 10 | run 6 | `<game>\LocalDumps` (xcl maps `D:` to `{game}`) | `+0x2237178` (unchanged) | directory listed and confirmed present before the boot; same crash, same `rax=0x0` | run record — hypothesis falsified (no surviving artifact) |
 | 11 | `9add721` upstream ("Retail game bring-up") + `XCL_NETWORK=0` | network off; rebase onto current upstream | `+0x2237178` (unchanged) | stubs 8 → 6; `hle-cross 14` and `xcl-netoff 6` build markers present; `rax=0x0` | verified — neither the rebase nor network-off moves the stop |
 | 12 | run 11 + GameInput device-info and callback-return logging | log `GetDeviceInfo` result and the callback's return | `+0x2237178` (unchanged) | log: `GetDeviceInfo` (size `0x3f0`, family 1, caps `0x8`, input `0x104000e`) → "device callback returned" → crash | verified — the assertion runs **after** the callback returns, not inside it |
 | 13 | run 12 + `XCL_CRASH_PROBE addr:len,tls0` | read the key and registry count at crash time | `+0x2237178` (unchanged) | probe: registry count **1** (not 0), the single entry is all zeros, and the key buffer holds **`appdata0.rpf`** | verified - the assert fires because a file-device lookup for `appdata0.rpf` finds an empty entry |
@@ -31,11 +31,12 @@ the environment, and repeating it is a wasted boot.
 | 15 | run 14 + XPackage entry logging | log `IsPackagedProcess`, `GetCurrentProcessPackageIdentifier`, `Mount`, `GetMountPathSize`/`GetMountPath`, `CloseMountHandle`, `EnumeratePackages` | `+0x1CE6E13` (unchanged) | logging only; the trace it produced is the one quoted in run 16 | verified — adding the logging did not move the stop |
 | 16 | run 15 + `package_identifier()` returns the manifest Identity Name only | test whether the identifier itself gates the stop | `+0x1CE6E13` (unchanged) | order: `IsPackagedProcess` → `GetCurrentProcessPackageIdentifier` (buffer 33) → `IsPackagedProcess` → `GetCurrentProcessPackageIdentifier` → `int3`; the 30-char name is accepted (`-> 0x00000000`) | verified — the change landed and the stop did not move; identifier length is **not** the gate |
 
-Runs 1–6, 10–14 and 16 are labelled verified because each has a trace log with the stopping RVA and the
+Runs 1–6, 11–14 and 16 are labelled verified because each has a trace log with the stopping RVA and the
 call that preceded it. Run 15 added logging only and changed no behaviour, so its row rests on the run 16
 trace. Runs 7 and 8 are null tests because the environment change did not take effect;
 run 9 never booted. In none of the three does the matching RVA say anything about the change under
-test. Run 10 is the first row that actually tested the dump directory, and it settled it. Run 16 is not
+test. Run 10 is the first row that actually tested the dump directory, and it settled it; its log did
+not survive, so the row stands on the run record alone. Run 16 is not
 a null test on the same grounds: the log shows the new 30-char answer being accepted, so the change
 landed and the unmoved RVA is a real falsification.
 

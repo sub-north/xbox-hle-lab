@@ -38,6 +38,9 @@ with `E_INVALIDARG` — that was our first probe's bug, not a GPU-PV limitation.
 
 ## xcl test title inside the VM (2026-11-21)
 
+**Scope:** every count, result and "game frame" in this section belongs to xcl's own synthetic test
+title (`xcl_testtitle.exe` + `testgame_mw.dll`). It is not the retail title, which has not been run.
+
 `xcl.exe` (lab build, **static CRT**) + `xcl_testtitle.exe` + `testgame_mw.dll` were copied into
 `C:\lab\e2e\game` and run over SSH (`network none`):
 
@@ -94,13 +97,16 @@ present: first game frame shown (640x360)
 report: "presents": 1, "failed_pipelines": 0, exit_code 0
 ```
 
+The "game frame" above is the test title's 640x360 image — xcl's synthetic title, not the retail one.
+
 Screenshot `archive/reports/vm-title-06.png` shows the `XCL - XCL.TestTitle` window. Its contents
 are present but composite **translucently** in the capture (the game frame's alpha reaches the
 desktop capture path; the window itself has no layered style). Not yet determined whether this is
 capture-only or also on a physical monitor — a fidelity item, not a presentation failure.
 
 **GameInput was a session artefact, not a missing runtime.** `GameInputCreate 0xd000003a` appears in
-session 0 and disappears in the interactive session — the same run is 30/30. **Do not install the
+session 0 and disappears in the interactive session — the same test-title run is 30/30 (synthetic
+`xcl_testtitle`, not the retail title). **Do not install the
 GameInput redistributable**; there is nothing to fix.
 
 **Snapshot gotcha:** taking a snapshot and restarting reverted the guest to the pre-`e2e` disk even

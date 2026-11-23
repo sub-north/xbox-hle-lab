@@ -39,8 +39,8 @@ console ABI returns an NTSTATUS here. Null/oversized input returns
 `E_INVALIDARG`.
 
 **Evidence — reported, not verified.** The signature and the 33-page limit come
-from GDK console documentation; the title has never booted, so no runtime call
-has been observed. This is defensive startup coverage. Upstream's version takes
+from GDK console documentation. Not yet run when this patch was written; runs 1–6 exercised the
+virtual-memory path. This is defensive startup coverage. Upstream's version takes
 `*const c_void` and always accepts, which is the behaviour to prefer now.
 
 ### 0002 — `XMemVirtualAlloc` (baseline reproduction)
