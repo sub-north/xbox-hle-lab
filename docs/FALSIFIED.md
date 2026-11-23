@@ -33,7 +33,7 @@ machine paths are elided.
    size comparison against the shipped asset and a read of the consumer at `+0x2237320`.
 
 **Artifact gaps (do not read as disproof).** The run archive holds no log or report for runs 10, 17,
-22, 24, 25, 27, 28 and 30, and the archived run table stops at run 14, so each of those rests on the run
+22, 24, 25, 27 and 30, and the archived run table stops at run 14, so each of those rests on the run
 record alone. The run-16 report is also missing, so run-16 counters come from run 14 (same RVA, same
 call path).
 
