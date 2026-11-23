@@ -24,6 +24,28 @@ readable by strangers, search engines and rights holders, so write for that audi
   non-commercial; ScarlettX none).
 - Claims without evidence. If it is "reported", say so; if it is ours, attach the log or hash.
 
+## Identifiers: hashes vs offsets
+
+Identifiers are judged by kind, not together. Applied in PR #10.
+
+- **Full hashes of files that shipped in the product are not published.** They are identification
+  material: a value someone can match against a file they already hold. Three such hashes were
+  withheld in PR #10; each is recorded in the lab record, with name and byte size published instead.
+- **Code offsets and RVAs are published.** An offset inside a large image is meaningless without the
+  binary, so it identifies nothing. Publishing addresses is already this repository's convention —
+  the console-DLL export tables — and removing them would destroy these records' usefulness as
+  records.
+- **Hashes of our own artefacts are published.** Run logs, reports, captured blobs and extracted
+  resource payloads are evidence we produced; their hashes prove provenance and stay in the tree.
+
+One-line test for a future contributor: *would this value let someone obtain, verify or identify a
+shipped file?* If yes, withhold it and say where it is held. If it only locates code inside a file we
+do not publish, it is fine.
+
+Counts at the time of this decision (2026-11-23), so the call is auditable: 51 lines across `docs/`
+carry the stop offset `+0x1CE6E13` (52 occurrences; one comparison table repeats it), 0 other
+game-executable offsets, 2 extracted-resource hashes published, 3 shipped-file hashes withheld.
+
 ## Verification gate before any commit
 
 1. `git status` — inspect every file.
