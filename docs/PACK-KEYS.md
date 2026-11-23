@@ -36,8 +36,13 @@ assigned a plausible-looking candidate.
 
 - **verified (static reading)** — the validator checks that every name in the list exists in a runtime
   map, keyed by these ids.
-- **verified (probe)** — our map is empty at the stop, so every one of the twelve misses and the title
-  reaches `int3` at `+0x1CE6E13`. This is the same empty-map observation recorded elsewhere.
+- **verified (probe)** — the twelve keys are looked up against the descriptor's own map at
+  `[Stage+0x2b0]+0x10`, which holds **50 entries in 4 groups** with a live base pointer. The map is
+  populated, not empty.
+- **hypothesis** — that the twelve keys miss. A key that is present can still be rejected by three
+  gates: the interface check, the `Stage` vtable call, or the found-vs-installed count. No probe has
+  measured which gate fires, or whether any key is absent; the per-key control-byte compare at
+  `0x292D465` reads the other map (`[[Stage+0x2a8]+0x20]`), which is empty.
 
 ## What was tested
 

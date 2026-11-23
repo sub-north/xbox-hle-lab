@@ -22,11 +22,16 @@ machine paths are elided.
 
 ## Still open
 
-1. **What populates the `flat_hash_map` whose 16 control bytes are all `0x80`?** The map at
-   `[[rsi+0x2a8]+0x78]+0x20` is empty (16 × `0x80`) at the stop, and its owner is a 0x70-byte object
-   with vtable `+0x6195668` and no RTTI. Candidates: a TLS/static initializer that never runs under
-   manual mapping, or a GDK storage-root COM lookup the host does not provide. Needed: the writer that
-   seeds the map, or the initializer that should have run before this step.
+1. **Which map does the interface check consult, and what gates a key that is present?** The map is
+   **populated**: the settings descriptor at `[rsi+0x2b0]` (0x70 bytes) holds 50 entries in 4 groups
+   at `+0x10`/`+0x14`/`+0x18`, with a base pointer. The empty block is `[[rsi+0x2a8]+0x20]`, a
+   `0x290`-stride map inside the 0x80-byte `[rsi+0x2a8]` instance (vtable `0x6301540`);
+   `0x6195668` is the outer object's vtable, not that map's owner. Retracted 2026-11-23: the earlier
+   "map is empty at `[[rsi+0x2a8]+0x78]+0x20`" reading, and the 0x70-byte owner it named.
+   Candidates for what writes the empty block, or for which of the three gates rejects a present key:
+   a TLS/static initializer that never runs under manual mapping, or a GDK storage-root COM lookup the
+   host does not provide. Needed: the writer that seeds each map, or the initializer that should have
+   run before this step.
 2. **Are `appdata0.rpf` contents inconsistent with this build?** Staging an **empty** file changes the
    fault to `0xc0000005` at `+0x2237320`, so the consumer reads the file rather than only its handle.
    That is a different failure, not a fix: it says the file is opened and its bytes are used. Needed: a

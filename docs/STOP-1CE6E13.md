@@ -1,5 +1,14 @@
 # The stop at `+0x1CE6E13`
 
+## Corrections (2026-11-23)
+
+- **Retracted: "the map is empty, so every key misses."** The empty 16 × `0x80` control run belongs
+  to `[[rsi+0x2a8]+0x20]`, one of two maps. The settings descriptor at `[rsi+0x2b0]` carries its own
+  map at `+0x10`, and that one is populated (50 entries). "Every key misses" is now **hypothesis**.
+- **Corrected: the `0x2a8`/`0x2b0` mix-up.** `0x70` sizes the descriptor at `[rsi+0x2b0]`, not the
+  0x80-byte instance at `[rsi+0x2a8]`; `0x6195668` is the outer object's vtable, `0x6301540` the
+  instance's. The `0x80` size is real (its allocation), not a probe read length.
+
 Evidence levels used here: **verified** = measured in our runs, read directly from the title's bytes,
 or present in archived run output; **reported** = a third party's claim that we have not reproduced;
 **notes-only** = recorded in our lab notes, with no archived log attached; **hypothesis** = reasoning,
@@ -30,19 +39,29 @@ stated as such and not confirmed.
 - **verified (crash probe)** — `rsi` points at an object with vtable `0x6195668` and no RTTI; the
   object's name is unknown. It was previously called the `Stage` object on the strength of the
   withdrawn string association, and is not named here.
-- **verified** — `[rsi+0x2a8]` is an instance pointer and `[[rsi+0x2a8]+0x78]` is a map block. No
-  struct size is claimed for either: the `0x70` immediate elsewhere sizes the block reached from
-  `[rsi+0x2b0]`, and the earlier `0x80` figure was the probe's read length, both withdrawn.
-- **verified (archived run-26 probe output, line 1373)** — that map block's control bytes begin with
-  sixteen `0x80` bytes, the empty marker: the block is empty.
+- **verified (PE, 2026-11-23)** — `[rsi+0x2a8]` is a 0x80-byte instance (allocated with
+  `mov ecx,0x80` at `0x5B2AF04`) whose vtable RVA is `0x6301540`. Call it **A**. A holds a
+  `0x290`-stride map at `[A+0x20]`.
+- **verified (archived run-26 probe output, line 1373)** — the control bytes of that map at
+  `[A+0x20]` begin with sixteen `0x80` bytes, the empty marker: this block is empty.
+- **verified (PE and probe)** — `[rsi+0x2b0]` is a 0x70-byte descriptor, **C**, freed with
+  `mov edx,0x70` at `0x5A3F2DC`. Its `+0x60` holds `{tag = 12, count = 12, list}`: the twelve
+  pack-name hashes.
+- **verified (probe)** — C's own flat map at `C+0x10`/`+0x14`/`+0x18` is **populated**: 4 groups,
+  50 entries, with a base pointer. It is not the empty block.
+- **inferred, not measured** — C and `[[rsi+0x2a8]+0x78]` are the same block: both carry the
+  `{12, 12, list}` header at `+0x60`, and the predicate null-tests `[rsi+0x2a8]+0x78`
+  (`0x292D3A7`). No run has printed both pointers.
 - **verified (static sweep)** — `0x694A1F8` is neither read nor written anywhere in `.text` and is
   zero in the file. It is benign and **not** the gate; it is no longer described as a fill source.
 - **verified** — `0x7693C44` also reads `0` at the crash; no role is claimed for it.
-- **not proven** — that the predicate's "matches 0" follows from the empty block or from any of the
-  values above. The scan's arms are still unproven.
+- **not proven** — which values the predicate tests. That the scan "matches 0" is not shown to
+  follow from the empty block at `[A+0x20]`, from C's 50 entries, or from the per-key compare at
+  `0x292D465`. The scan's arms are unproven.
 
-So what is established is an **empty map block** at `[[rsi+0x2a8]+0x78]`; the exact value the
-predicate tests is not.
+So what is established is an **empty map at `[A+0x20]`** beside a **populated map in C**. Which map
+the twelve keys are judged against, and why a key present in C can still be rejected (interface
+check, the outer object's vtable call, or the found-vs-installed count), is **hypothesis**.
 
 ## Falsified hypotheses
 
@@ -76,5 +95,6 @@ predicate tests is not.
 ## Not claimed
 
 - No window, no D3D12 command list and no frame exist at this stop.
-- That the scan *matches 0* is unproven; only the empty map block is measured.
+- That the scan *matches 0* is unproven; the empty block at `[A+0x20]` and C's populated map are
+  measured.
 - Nothing here follows from the `displayStateSet` string; see the withdrawn hypothesis above.

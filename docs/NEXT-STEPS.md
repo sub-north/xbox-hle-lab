@@ -15,10 +15,14 @@ first engine frame. (verified)
 
 - An `int3` at the title's RVA **`+0x1CE6E13`**; the predicate it guards sits at **`+0x292D370`**.
   (verified)
-- The predicate scans records against a `flat_hash_map` reached at `[[rsi+0x2a8]+0x78]+0x20`. All 16
-  of that map's control bytes read `0x80`, the empty marker. (verified)
-- Our reading, not yet proven: the scan requires every key in a settings-provided list to exist in
-  the map, and the empty map is why it stops. (hypothesis)
+- The predicate scans records against a `flat_hash_map` at `[[rsi+0x2a8]+0x20]` — A is the 0x80-byte
+  instance (vtable `0x6301540`) held at `[rsi+0x2a8]`. All 16 of that map's control bytes read `0x80`,
+  the empty marker. (verified)
+- The twelve keys live in the descriptor at `[rsi+0x2b0]` (0x70 bytes): `{tag = 12, count = 12, list}`
+  at `+0x60`, and its own map at `+0x10` is populated with 50 entries in 4 groups. (verified)
+- Our reading, not yet proven: a key present in the descriptor's map is still rejected by one of three
+  gates — the interface check, the `Stage` vtable call, or the found-vs-installed count — and that is
+  why the scan stops. "Keys miss" is **hypothesis**, not measured. (hypothesis)
 - Skipping the break does not advance: the title faults with `0xc0000005`, a write to address 0
   inside `vcruntime140`. The check therefore guards a real precondition used later; it is not a
   stale assert to jump. (recorded; no archived log)
