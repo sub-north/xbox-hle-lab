@@ -1,11 +1,12 @@
 # gpu_probe — PC-side D3D12 oracles
 
-Four small single-file programs used to separate "the GPU works" from "the VM can reach the GPU",
+Small single-file programs used to separate "the GPU works" from "the VM can reach the GPU",
 and to get an independent PC reference for console data. Sources only; build them yourself.
 
 | File | Builds | Answers |
 |---|---|---|
 | `main.cpp` | `gpu_probe.exe` | adapter list, VRAM, feature level, wave lane range, DXR tier, mesh-shader tier, binding tier |
+| `descriptor_heap_probe.cpp` | `descriptor_heap_probe.exe` | shader-visible CBV/SRV/UAV heap limits on hardware and WARP, with a CPU-only control |
 | `uma_probe.cpp` | `uma_probe.exe` | can a 4 GiB-aligned 2 GB region be opened as a D3D12 heap (`OpenExistingHeapFromAddress`) — the unified-memory path a console runtime needs |
 | `present_probe.cpp` | `present_probe.exe` | minimal Win32 + flip-model swapchain: clear and present for N seconds, printing every HRESULT |
 | `rootsig_check.cpp` | `rootsig_check.exe` | deserialize a serialized root signature blob and print its normalised structure |
@@ -18,6 +19,7 @@ next to a game folder can be misclassified as a game DLL and break the loader.
 
 ```bat
 cl /nologo /O2 /MT /EHsc main.cpp           /link d3d12.lib dxgi.lib user32.lib
+cl /nologo /O2 /MT /EHsc /std:c++17 descriptor_heap_probe.cpp /link d3d12.lib dxgi.lib
 cl /nologo /O2 /MT /EHsc uma_probe.cpp      /link d3d12.lib dxgi.lib user32.lib
 cl /nologo /O2 /MT /EHsc present_probe.cpp  /link d3d12.lib dxgi.lib user32.lib
 cl /nologo /O2 /MT /EHsc rootsig_check.cpp  /link d3d12.lib user32.lib
@@ -30,11 +32,16 @@ cl /nologo /O2 /MT /EHsc rootsig_check.cpp  /link d3d12.lib user32.lib
 ```bat
 gpu_probe.exe                 :: run on the host and in the guest, compare the two
 gpu_probe.exe --serial COM1   :: also write the report to a serial port (how results left the isolated VM)
+descriptor_heap_probe.exe     :: allocate and release each test heap before trying the next count
 present_probe.exe 12 0        :: 12 seconds, sync interval 0
 rootsig_check.exe blob.bin    :: dump params, descriptor ranges, flags, static samplers
 ```
 
 ## Interpretation notes (learned the hard way)
+
+- **Binding tier and heap capacity are separate.** The heap probe reports the runtime's
+  `OPTIONS19.MaxViewDescriptorHeapSize` when available, plus allocation HRESULTs. Compare
+  the shader-visible requests with the CPU-only control and check the device-removed reason.
 
 - **Duplicate adapters are normal under GPU partitioning.** Three identical paravirtualised adapters
   with the same name and LUID class were exposed in our VM. Do not assume a single adapter, and do not
