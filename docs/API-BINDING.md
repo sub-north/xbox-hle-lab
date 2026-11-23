@@ -5,9 +5,11 @@ time by a macro and read by name at call time. The runtime binary has no export 
 correct, and this page shows why, how a title reaches the map anyway, and how to tell that it
 worked.
 
-Source references are file:line in the GPL-2.0 runtime, paths relative to `crates/xcl/src`. The
-export-directory figures are measured with a PE reader on three builds of the runtime (lab record),
-not by searching strings.
+Source references are file:line in the GPL-2.0 runtime, paths relative to `crates/xcl/src`; the
+API-binding module is `hle/xgameruntime/api.rs`. Line numbers track runtime commit `6ea3c57`, not
+the frozen baseline, so they can drift and should be re-checked on any other checkout. The
+export-directory figures are measured with a PE reader on three builds of the runtime, not by
+searching strings.
 
 ## 1. The mechanism — a map, a registration, a fake handle
 
@@ -20,7 +22,8 @@ The runtime module's list starts at `hle/xgameruntime/mod.rs:22-30`; its DLL nam
 
 **The registration.** `host_main` calls `hle::init` (`host.rs:33`), which sets a `OnceLock`
 (`hle/mod.rs:119-121`) from `build()` (`hle/mod.rs:75-117`); the runtime module is added at
-`hle/mod.rs:78`. Registration happens once, before the title is mapped.
+`hle/mod.rs:78`. Registration happens once at startup; in the observed order it precedes the title
+being mapped.
 
 **The lookup.** `resolve_hle` (`resolver.rs:106-110`) is the whole answer: `m.exports.get(name)`.
 A miss falls through to a cross-module search (`hle/mod.rs:147-151`, for functions the console
@@ -37,22 +40,24 @@ is mapped into them**, and no lookup ever consults them.
 
 | # | Title calls | Runtime entry | Path |
 |---|---|---|---|
-| 1 | `LoadLibraryW` | `kernelx.rs:658-660` | `load_library_impl` (`kernelx.rs:640-653`) → `resolver::load_library` (`resolver.rs:279-293`) → `hle_handle` (`modules.rs:99-115`); logged at `kernelx.rs:647`. `LoadLibraryExW` shares it (`kernelx.rs:671-676`) |
+| 1 | `LoadLibraryW` | `kernelx.rs:658-660` | `load_library_impl` (`kernelx.rs:640-656`) → `resolver::load_library` (`resolver.rs:279-293`) → `hle_handle` (`modules.rs:99-115`); logged at `kernelx.rs:647`. `LoadLibraryExW` shares it (`kernelx.rs:671-676`) |
 | 2 | `GetProcAddress` | `kernelx.rs:689-703` | `resolver::get_proc_address` (`resolver.rs:323-333`) → `resolve_hle` (`resolver.rs:106-110`). A miss returns `NULL` + `ERROR_PROC_NOT_FOUND` (`kernelx.rs:698-701`), deliberately no stub, so optional-API probing works (`resolver.rs:321-322`) |
-| 3 | `InitializeApiImplEx2` | `api.rs:160-166` | `pc_init` (`api.rs:168-181`) forwards to the PC runtime's own initialiser |
-| 4 | `QueryApiImpl(clsid, iid)` | `api.rs:205-235` | refused classes → `REGDB_E_CLASSNOTREG` (`:211-214`); ours → `S_OK` (`:215-222`); else the PC runtime's object (`:224-229`); else `missing` (`:230-233`) |
-| 5 | call through a vtable slot | `api.rs:341-370` | `call_target` (`:341-345`), shims generated per slot (`:347-370`) |
+| 3 | `InitializeApiImplEx2` | `hle/xgameruntime/api.rs:160-166` | `pc_init` (`hle/xgameruntime/api.rs:168-181`) forwards to the PC runtime's own initialiser |
+| 4 | `QueryApiImpl(clsid, iid)` | `hle/xgameruntime/api.rs:205-235` | refused classes → `REGDB_E_CLASSNOTREG` (`:211-214`); ours → `S_OK` (`:215-222`); else the PC runtime's object (`:224-229`); else `missing` (`:230-233`) |
+| 5 | call through a vtable slot | `hle/xgameruntime/api.rs:341-370` | `call_target` (`:341-345`), shims generated per slot (`:347-370`) |
 
 **Slots are filled by name, once.** The GDK table lists `(function, class id, interface id, slot)`
 rows (`hle/xgameruntime/gdk_table.rs:5-6`), extracted from the public PC GDK's thunk library
-(`gdk_table.rs:1-3`, `api.rs:19-24`). `layout()` (`api.rs:391-429`) groups interface ids that do not
-share slots and resolves each implemented function to a slot *by name* (`:417-423`); `object()`
-(`api.rs:372-387`) writes those pointers into the vtable and fills every other slot with a logging
-stub. The title's indirect call is then a plain indirect call: no name resolution happens at that
-moment.
+(`gdk_table.rs:1-3`, `hle/xgameruntime/api.rs:19-24`). `layout()`
+(`hle/xgameruntime/api.rs:391-429`) groups interface ids that do not share slots and resolves each
+implemented function to a slot *by name* (`:417-423`); `object()`
+(`hle/xgameruntime/api.rs:372-387`) writes those pointers into the vtable and fills every other slot
+with a logging stub. The title's indirect call is then a plain indirect call: no name resolution
+happens at that moment.
 
 Both surfaces exist. The by-name exports in `hle/xgameruntime/mod.rs:22-30` serve titles that import
-the functions directly; the thunk protocol above is what most titles use (`api.rs:1-5`).
+the functions directly; the thunk protocol above is the path the logged runs take
+(`hle/xgameruntime/api.rs:1-5`).
 
 ## 3. Why an empty export directory is correct
 
@@ -83,8 +88,8 @@ Grep the run log, in this order:
 | Pattern | Emitted at | Level | Means |
 |---|---|---|---|
 | `LoadLibrary(xgameruntime.dll) → 0x` | `kernelx.rs:647` | debug | the name was routed to the runtime module and a handle returned. `→ NULL` instead means no handle was produced — no route, or a failed load (`kernelx.rs:651`) |
-| `InitializeApiImplEx2(` and `title goes through the GDK thunks` | `api.rs:161` | info | the title entered the thunk protocol |
-| `XGameRuntime: QueryApiImpl ` | `api.rs:1064` | info | one line per `(clsid, iid)` with a verdict: `XCL`, `PC`, `missing`, or `<name>: unavailable (offline)` |
+| `InitializeApiImplEx2(` and `title goes through the GDK thunks` | `hle/xgameruntime/api.rs:161` | info | the title entered the thunk protocol |
+| `XGameRuntime: QueryApiImpl ` | `hle/xgameruntime/api.rs:1064` | info | one line per `(clsid, iid)` with a verdict: `XCL`, `PC`, `missing`, or `<name>: unavailable (offline)` |
 
 A healthy binding looks like: the `LoadLibrary` line, then `InitializeApiImplEx2`, then at least one
 `QueryApiImpl … → …: XCL`. In a real run this appears as a short run of `QueryApiImpl` lines, each
@@ -92,15 +97,16 @@ naming a different API family.
 
 Two reading notes:
 
-- Lines are deduplicated per `(clsid, iid)` by a `SEEN` map (`api.rs:1058-1067`). One line is the
-  whole record for that pair; a repeated class does not log again.
+- Lines are deduplicated per `(clsid, iid)` by a `SEEN` map
+  (`hle/xgameruntime/api.rs:1058-1067`). One line is the whole record for that pair; a repeated
+  class does not log again.
 - `LoadLibrary` is debug-level. A log level that filters debug removes that line while binding still
   works, so judge on the `QueryApiImpl` lines first and treat the `LoadLibrary` line as
   confirmation.
 
 ## 5. The one open gap
 
-**Verified:** a wide literal for the runtime DLL's name sits in the title's read-only data, beside
+**Inferred:** a wide literal for the runtime DLL's name sits in the title's read-only data, beside
 other module-name literals.
 
 **Inferred:** the instruction that passes it to `LoadLibraryW`. No RIP-relative `lea` and no
@@ -143,15 +149,15 @@ grep -E "LoadLibrary\(xgameruntime|InitializeApiImpl|QueryApiImpl" xcl.log
 | `LoadLibrary(xgameruntime.dll) → 0x…`, `InitializeApiImplEx2`, ≥1 `QueryApiImpl … → …: XCL` | healthy — routed, entered, answered |
 | `LoadLibrary(xgameruntime.dll) → NULL` | unhealthy — the name is not routed to the module |
 | `GetProcAddress(…, …) → NULL (not implemented)` (`resolver.rs:331`) | unhealthy — a name was requested that the map does not hold |
-| `QueryApiImpl … → …: missing` (`api.rs:231`) | unhealthy — the class was asked for and neither the map nor the PC runtime answered |
+| `QueryApiImpl … → …: missing` (`hle/xgameruntime/api.rs:231`) | unhealthy — the class was asked for and neither the map nor the PC runtime answered |
 | no `QueryApiImpl` lines at all | inconclusive — the title never reached the thunk protocol; this says nothing about the map |
 | a PE tool says `0 exports` | **neither** — see section 3 |
 
 ## Not claimed
 
-- That the GDK table is complete for every GDK version. `api.rs:21-24` states the policy for an
-  interface id the table does not know (the class's main vtable); no independent coverage measure is
-  given here.
+- That the GDK table is complete for every GDK version. `hle/xgameruntime/api.rs:21-24` states the
+  policy for an interface id the table does not know (the class's main vtable); no independent
+  coverage measure is given here.
 - That every class the title asks for is implemented. Refusals and `PC` handoffs are by design
-  (`api.rs:7-17`).
+  (`hle/xgameruntime/api.rs:7-17`).
 - Anything about the title-side call site — section 5 is open, not settled.
