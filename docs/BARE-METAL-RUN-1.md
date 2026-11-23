@@ -1,6 +1,7 @@
 # First bare-metal run past the archive gate
 
-**Measured** unless inferred.
+**Measured** unless inferred. Counts are log lines unless stated; a shader emits two lines, so
+225 `[SHADER]` lines are 96 distinct shaders.
 
 ## Setup
 
@@ -11,8 +12,9 @@ with a completion marker.
 
 ## Result (measured)
 
-No validation assert: the registration gate cleared. The title built graphics state — 225 shader
-translations, 91 compute pipelines, `CreatePlacedResourceX` at its console virtual addresses — then
+No validation assert: the registration gate cleared. The title built graphics state — 96 distinct
+shaders (225 `[SHADER]` log lines, 33 root signatures), 91 compute pipelines,
+`CreatePlacedResourceX` at its console virtual addresses — then
 `STATUS_ILLEGAL_INSTRUCTION` (0xC000001D) at 7.254 s, at the fault address. Zero presents, zero frame
 boundaries. Pipeline setup, not drawing.
 
