@@ -31,3 +31,5 @@ archive is **notes-only** linked to the child-open returning 0. That the stub is
 
 **Prediction (inferred).** A real archive for that key should let both counters reach 12 and
 registration complete; the next stop is the observation to watch.
+
+The gate is per-archive, measured across two runs with one variable changed: [`ARCHIVE-GATE.md`](ARCHIVE-GATE.md).
