@@ -19,10 +19,13 @@ first engine frame. (verified)
   instance (vtable `0x6301540`) held at `[rsi+0x2a8]`. All 16 of that map's control bytes read `0x80`,
   the empty marker. (verified)
 - The twelve keys live in the descriptor at `[rsi+0x2b0]` (0x70 bytes): `{tag = 12, count = 12, list}`
-  at `+0x60`, and its own map at `+0x10` is populated with 50 entries in 4 groups. (verified)
-- Our reading, not yet proven: a key present in the descriptor's map is still rejected by one of three
-  gates — the interface check, the `Stage` vtable call, or the found-vs-installed count — and that is
-  why the scan stops. "Keys miss" is **hypothesis**, not measured. (hypothesis)
+  at `+0x60`, and its own map at `+0x10` is **populated**: 4 groups, **32** entries (measured), with a
+  live base pointer; 14 of its 16 control bytes are occupied. (verified)
+- The keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among its entries. The
+  earlier "the twelve keys miss" reading is refuted; there is no lookup miss to explain. (verified)
+- What remains is the install gate plus rollback: the pack has to be registered as a device before
+  this check runs, and a key that is present is then rejected by the interface check and the state
+  rolls back — which is why the scan stops. (hypothesis)
 - Skipping the break does not advance: the title faults with `0xc0000005`, a write to address 0
   inside `vcruntime140`. The check therefore guards a real precondition used later; it is not a
   stale assert to jump. (recorded; no archived log)
