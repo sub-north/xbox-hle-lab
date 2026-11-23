@@ -4,10 +4,14 @@
 
 - **Retracted: "the map is empty, so every key misses."** The empty 16 × `0x80` control run belongs
   to `[[rsi+0x2a8]+0x20]`, one of two maps. The settings descriptor at `[rsi+0x2b0]` carries its own
-  map at `+0x10`, and that one is populated (32 entries). "Every key misses" is now **hypothesis**.
-- **Corrected: the entry count.** The map in C holds **32** entries, not 50. The 50 came from a field
-  dump of the counters and is wrong; measured, the header reads `+0x10 = 4` groups and `+0x14 = 0x20`
-  (**32** entries) (why-probe, 2026-11-23).
+  map at `+0x10`, and that one is populated (50 entries, `0x32`). "Every key misses" is now
+  **hypothesis**.
+- **Corrected: the entry count is 50 (0x32), not 32.** The earlier 32 was a decimal misread of a
+  hex-formatted field: the probe prints the header with `{:x?}`, so `+0x14 = 0x32` is 50. Two
+  independent runs agree — `crc5` and `crc6` (`count-repro/RESULT.md`), one binary, byte-identical
+  config — and each read the field twice, 200 ms apart, returning `50 / 50`; a mid-build mutation is
+  therefore excluded. The full 12-key FNV-1a64 fingerprint was identical in both runs
+  (`0xaaa5defa304819d6`).
 - **Corrected: the `0x2a8`/`0x2b0` mix-up.** `0x70` sizes the descriptor at `[rsi+0x2b0]`, not the
   0x80-byte instance at `[rsi+0x2a8]`; `0x6195668` is the outer object's vtable, `0x6301540` the
   instance's. The `0x80` size is real (its allocation), not a probe read length.
@@ -51,7 +55,9 @@ stated as such and not confirmed.
   `mov edx,0x70` at `0x5A3F2DC`. Its `+0x60` holds `{tag = 12, count = 12, list}`: the twelve
   pack-name hashes.
 - **verified (why-probe run, 2026-11-23)** — C's own flat map at `C+0x10`/`+0x14`/`+0x18` is
-  **populated**: 4 groups, 32 entries (measured), with a base pointer. The control run at
+  **populated**: 4 buckets, 64 slots, **50 entries (`0x32`)** measured, with a base pointer; the growth
+  threshold is 55. `+0x10` is the bucket count the lookup consumes at `0x292D426`; `+0x14` is the live
+  entry count growth reads at `0x5E075C`. The control run at
   `*[C+0x18]` holds **14 occupied of 16 slots**, the two empty markers being trailing `0x80` bytes:
   the map is live, not empty. It is not the empty block.
 - **verified (why-probe run, 2026-11-23)** — C === `[[rsi+0x2a8]+0x78]`. The probe printed both as
@@ -61,7 +67,7 @@ stated as such and not confirmed.
   zero in the file. It is benign and **not** the gate; it is no longer described as a fill source.
 - **verified** — `0x7693C44` also reads `0` at the crash; no role is claimed for it.
 - **not proven** — which values the predicate tests. That the scan "matches 0" is not shown to
-  follow from the empty block at `[A+0x20]`, from C's 32 entries, or from the per-key compare at
+  follow from the empty block at `[A+0x20]`, from C's 50 entries, or from the per-key compare at
   `0x292D465`. The scan's arms are unproven.
 
 So what is established is an **empty map at `[A+0x20]`** beside a **populated map in C**. Which map

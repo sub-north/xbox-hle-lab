@@ -19,13 +19,14 @@ machine paths are elided.
 | 8 | The global at `[game+0x694A1F8]` is the cause | full xref sweep + value probe (run 26) | Sweep: **0 readers, 0 writers**; the slot is 0 in the image, and the probe read `[game+0x694A1F8] = 0` as expected. A slot nothing reads or writes is not a gate. | **falsified** (benign) | a writer appears in a re-run of the sweep |
 | 9 | A stale per-title data root caused it | fresh `XCL_DATA_ROOT` (run 28) | Fresh root, same assert at the same RVA. The root's *name* was the only variable changed. | **falsified** | the fresh root is shown to differ in **content** (list both trees) |
 | 10 | TLS slot 0 was wrong | read the TLS index and the registry count at the stop (run 16) | Archived run-16 log, line 1251: the title's executable owns slot 0 while the runtime's own TLS is in slot 17; line 1305: `probe reg: count=1` — the title owns slot 0 and the count is 1, not 0. | **falsified** | the log shows the title in a slot other than 0 |
-| 11 | The 12 keys are absent from the registry map | break-at-stop probe printing both pointers, the map header and its control bytes (why-probe, run `why1`, 2026-11-23) | The probe printed `[Stage+0x2b0]` and `[[Stage+0x2a8]+0x78]` as the **same** pointer (`0x24794e5ea30`): one live map, `+0x10 = 4` groups, `+0x14 = 32` entries, 14 of 16 control slots occupied. `joaat("common") = 0xac9e7e35` is present among its keys. A listed key is in the map, so absence is not the gate. | **falsified** | a probe prints the map's key slots and shows a listed id missing |
+| 11 | The 12 keys are absent from the registry map | break-at-stop probe printing both pointers, the map header and its control bytes (why-probe, run `why1`, 2026-11-23) | The probe printed `[Stage+0x2b0]` and `[[Stage+0x2a8]+0x78]` as the **same** pointer (`0x24794e5ea30`): one live map, `+0x10 = 4` buckets, `+0x14 = 0x32` = 50 entries, 14 of 16 control slots occupied. `joaat("common") = 0xac9e7e35` is present among its keys. A listed key is in the map, so absence is not the gate. | **falsified** | a probe prints the map's key slots and shows a listed id missing |
 
 ## Still open
 
 1. **Which map does the interface check consult, and what gates a key that is present?** The map is
-   **populated**: the settings descriptor at `[rsi+0x2b0]` (0x70 bytes) holds 32 entries in 4 groups
-   at `+0x10`/`+0x14`/`+0x18`, with a base pointer. The empty block is `[[rsi+0x2a8]+0x20]`, a
+   **populated**: the settings descriptor at `[rsi+0x2b0]` (0x70 bytes) holds 50 entries (`0x32`) in
+   4 buckets / 64 slots at `+0x10`/`+0x14`/`+0x18`, with a base pointer and a growth threshold of 55.
+   The empty block is `[[rsi+0x2a8]+0x20]`, a
    `0x290`-stride map inside the 0x80-byte `[rsi+0x2a8]` instance (vtable `0x6301540`);
    `0x6195668` is the outer object's vtable, not that map's owner. Retracted 2026-11-23: the earlier
    "map is empty at `[[rsi+0x2a8]+0x78]+0x20`" reading, and the 0x70-byte owner it named.

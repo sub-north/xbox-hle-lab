@@ -37,8 +37,10 @@ assigned a plausible-looking candidate.
 - **verified (static reading)** — the validator checks that every name in the list exists in a runtime
   map, keyed by these ids.
 - **verified (probe)** — the twelve keys are looked up against the descriptor's own map at
-  `[Stage+0x2b0]+0x10`, which holds **4 groups, 32 entries (measured)** with a live base pointer; the
-  control run shows 14 of its 16 slots occupied. The map is populated, not empty.
+  `[Stage+0x2b0]+0x10`, which holds **4 buckets, 64 slots, 50 entries (`0x32`)** with a live base
+  pointer and a growth threshold of 55; the header's `+0x10` is the bucket count the lookup consumes at
+  `0x292D426`, and `+0x14` is the live entry count growth reads at `0x5E075C`. The control run shows
+  14 of its 16 slots occupied. The map is populated, not empty.
 - **verified (probe)** — the keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among
   its entries. The earlier "the twelve keys miss" reading is refuted; there is no lookup miss to
   explain.

@@ -22,7 +22,8 @@ as "no keys found" — a rollback signature, retracted in [`STOP-1CE6E13.md`](ST
 | 7 | `275b8a30` levels | **0** |
 
 `[rsp+0x3c]=7`, `[rsp+0x28]=6`, `equal=false`. Abort is `list[6] = 0x275b8a30` = `levels` (PE read;
-0/1-based agree). Only 8 of 12 dwords dumped; indices 8–11 are **unmeasured**, unnamed.
+0/1-based agree). All 12 key ids are now dumped, `d521d1ea` … `e7a8cdf1` (two runs, `crc5`/`crc6`); the
+earlier "only 8 of 12" limit is closed, and only the slot order of indices 8–11 remains unmeasured.
 
 **Causation open.** Placeholders left the assert unmoved ([`PACK-KEYS.md`](PACK-KEYS.md)); a stub
 archive is **notes-only** linked to the child-open returning 0. That the stub is *why* `al=0` is a
