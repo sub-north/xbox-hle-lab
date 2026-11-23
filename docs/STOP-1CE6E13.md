@@ -83,7 +83,8 @@ check, the outer object's vtable call, or the found-vs-installed count), is **hy
   `data.rpf` was staged but the title never queried it. Neither moved the stop.
 - **verified (archived run-26 log)** — *further staging*: `movies.rpf` present (query returns `0x20`)
   left the stop unchanged, and staging the script, shaders, textures and packs archives changed
-  nothing either. Staging content is ruled out as the cause.
+  nothing either. Partial staging is ruled out as the cause; completeness is the gate — the complete
+  payload clears this stop ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
   (The earlier crash-reporter assert at `+0x2237178` had already been cleared by staging
   `appdata0.rpf` in run 14.)
 
@@ -105,7 +106,8 @@ check, the outer object's vtable call, or the found-vs-installed count), is **hy
 
 ## Not claimed
 
-- No window, no D3D12 command list and no frame exist at this stop.
+- No window, no D3D12 command list and no frame exist at this stop; past it, the complete-payload run
+  builds 91 compute pipelines and still presents nothing ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
 - That the scan *matches 0* is unproven; the empty block at `[A+0x20]` and C's populated map are
   measured.
 - Nothing here follows from the `displayStateSet` string; see the withdrawn hypothesis above.

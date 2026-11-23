@@ -44,9 +44,9 @@ assigned a plausible-looking candidate.
 - **verified (probe)** — the keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among
   its entries. The earlier "the twelve keys miss" reading is refuted; there is no lookup miss to
   explain.
-- **what remains** — the install gate plus rollback, not a lookup miss. The pack has to be registered
-  as a device before this check runs; a key that is present is then rejected by the interface check
-  and the state rolls back. The per-key control-byte compare at `0x292D465` reads the other map
+- **what remains** — the gate is archive presence, not device registration: with the complete set
+  staged, registration completes and this check passes ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
+  The per-key control-byte compare at `0x292D465` reads the other map
   (`[[Stage+0x2a8]+0x20]`), which is empty.
 
 ## What was tested

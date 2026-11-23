@@ -1,8 +1,9 @@
 # The archive gate is per-archive
 
-**Measured (`ka1`, `lv1`).** Two runs of the same binary in the same environment differ in exactly
-one variable: whether the real archive for the seventh key was present. The registration loop
-stopped at a different key in each run — and at the same instruction in both.
+**Measured (`ka1`, `lv1`, run 1).** Three runs. The first two, same binary in the same environment,
+differ in exactly one variable: whether the real archive for the seventh key was present; the
+registration loop stopped at a different key in each — and at the same instruction in both. The
+third, on a separate install with the complete payload, does not stop there.
 
 ## The loop
 
@@ -45,10 +46,9 @@ the list and changed nothing else.
   openable. A partial set produces the same stop at whichever slot is still a placeholder.
 - **inferred** — clearing one key buys nothing observable: the abort relocates to the next
   unopenable slot, so only a complete set can move the counters to their full value.
-- **inferred, and the next observation** — whether the stop at `+0x1CE6E13` clears once every
-  archive is present. This is one decisive test: complete archive set, same binary, same
-  environment, one run. If the stop survives a complete set, archive presence is not the gate and
-  the prediction above is falsified.
+- **measured (run 1)** — the stop at `+0x1CE6E13` clears once every archive is present. Complete
+  archive set, one run: no validation assert, graphics state built. The prediction above holds; see
+  [BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md).
 
 ## Cost (measured)
 
@@ -60,7 +60,8 @@ one.
 ## Not claimed
 
 - Why an open fails is not measured; the 64-byte placeholder is notes-only linked to `al=0`.
-- That a complete set clears the stop is **inferred**, not a result. Nothing here shows what the
-  title does after the counters agree.
+- A complete set clears the stop — **measured** in run 1, not inferred. What the title does after the
+  counters agree is on the record too: it builds graphics state and faults on `0xC000001D`
+  ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
 - No per-archive behaviour beyond accepted or rejected is claimed: no bounds, no ordering effect
   between accepted keys.

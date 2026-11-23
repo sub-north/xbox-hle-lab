@@ -2,8 +2,9 @@
 
 Status: **reached the title's own code and advanced through five distinct stops** — not playable, no
 frame. The crash-reporter assertion that blocked runs 6–13 was cleared by staging the data file the
-title asks for (`appdata0.rpf`); the title now stops in an unimplemented-method trap at `+0x1CE6E13`,
-before any window exists and before any D3D12 command list is created.
+title asks for (`appdata0.rpf`); the title then stopped in an unimplemented-method trap at `+0x1CE6E13`,
+before any window existed and before any D3D12 command list was created — and stopped there until the
+complete payload cleared it ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
 Evidence level: our own runs, in a GPU-PV VM, with logs. The title itself is not distributed here.
 
 ## Environment
