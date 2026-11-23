@@ -37,12 +37,15 @@ assigned a plausible-looking candidate.
 - **verified (static reading)** — the validator checks that every name in the list exists in a runtime
   map, keyed by these ids.
 - **verified (probe)** — the twelve keys are looked up against the descriptor's own map at
-  `[Stage+0x2b0]+0x10`, which holds **50 entries in 4 groups** with a live base pointer. The map is
-  populated, not empty.
-- **hypothesis** — that the twelve keys miss. A key that is present can still be rejected by three
-  gates: the interface check, the `Stage` vtable call, or the found-vs-installed count. No probe has
-  measured which gate fires, or whether any key is absent; the per-key control-byte compare at
-  `0x292D465` reads the other map (`[[Stage+0x2a8]+0x20]`), which is empty.
+  `[Stage+0x2b0]+0x10`, which holds **4 groups, 32 entries (measured)** with a live base pointer; the
+  control run shows 14 of its 16 slots occupied. The map is populated, not empty.
+- **verified (probe)** — the keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among
+  its entries. The earlier "the twelve keys miss" reading is refuted; there is no lookup miss to
+  explain.
+- **what remains** — the install gate plus rollback, not a lookup miss. The pack has to be registered
+  as a device before this check runs; a key that is present is then rejected by the interface check
+  and the state rolls back. The per-key control-byte compare at `0x292D465` reads the other map
+  (`[[Stage+0x2a8]+0x20]`), which is empty.
 
 ## What was tested
 
