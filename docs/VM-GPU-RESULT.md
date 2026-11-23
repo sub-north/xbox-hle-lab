@@ -39,7 +39,8 @@ with `E_INVALIDARG` — that was our first probe's bug, not a GPU-PV limitation.
 ## xcl test title inside the VM (2026-11-21)
 
 **Scope:** every count, result and "game frame" in this section belongs to xcl's own synthetic test
-title (`xcl_testtitle.exe` + `testgame_mw.dll`). It is not the retail title, which has not been run.
+title (`xcl_testtitle.exe` + `testgame_mw.dll`). It is not the retail title, which has since been run
+([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md), 2026-11-23).
 
 `xcl.exe` (lab build, **static CRT**) + `xcl_testtitle.exe` + `testgame_mw.dll` were copied into
 `C:\lab\e2e\game` and run over SSH (`network none`):

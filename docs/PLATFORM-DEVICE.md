@@ -21,8 +21,9 @@ stated as an open question rather than guessed.
 ## 3. Our runs never reach that open
 
 - **verified (run records)** - the stop is the pack validator's `int3` at `+0x1CE6E13` in every
-  unperturbed run since run 10, before the dispatcher is entered. Run 27's zero-length pack moved it to
-  `+0x2237320`, also earlier.
+  unperturbed **partial-payload** run since run 10, before the dispatcher is entered. Run 27's
+  zero-length pack moved it to `+0x2237320`, also earlier. With the complete payload (run 1) the
+  validator clears, but the run still faults before the dispatcher is entered, on `0xC000001D`.
 - **verified (debugger chain)** - stepping over `+0x1CE6E13` reaches `+0x2224517`, where the open's
   assert fires. So with the validator bypassed the open still fails: no registered device answered it.
 - This is the only evidence we have about the open, and it is all negative. It says nothing about what
@@ -43,6 +44,5 @@ stated as an open question rather than guessed.
 - **open** - the smallest legitimate way for an HLE to back it without an RPF filesystem. One device
   entry serving the handful of requested names, and a real filesystem layer, are both untested, and
   nothing above says the title would accept either.
-- What would settle it: a run that clears `+0x1CE6E13` and logs the request list the dispatcher walks.
 
 Related: `docs/PACK-KEYS.md` (what the validator expects) and `docs/STOP-1CE6E13.md` (the stop).

@@ -9,8 +9,9 @@ distributed as patches against the upstream GPL-2.0 project, not as a fork.
 ## Status
 
 The lab has demonstrated a GPU-PV VM exposing a D3D12 device, xcl binding the title's HLE imports,
-and the title reaching its own initialisation code. It has not produced a rendered game frame: every
-run stops inside the title's early init, before a window or command list exists.
+and the title reaching its own initialisation code and building graphics state. It has not produced a
+rendered game frame: the run with the complete payload builds 91 compute pipelines and stops on an
+instruction fault, with zero presents.
 
 - **2026-11-23 — first executable run.** The title's own code executed under xcl; the run log records
   the entry point and the stopping address.
@@ -19,8 +20,9 @@ run stops inside the title's early init, before a window or command list exists.
 - **2026-11-23 — crash-reporter assert cleared.** Staging the pack the title looks up at that point
   satisfied the lookup and moved the stop to the next gate.
 
-Current blocker: an early init validator expects 12 pack names registered as devices; eleven are
-named. See [`docs/PACK-KEYS.md`](docs/PACK-KEYS.md).
+Current blocker: `STATUS_ILLEGAL_INSTRUCTION` (`0xC000001D`) at 7.254 s, after pipeline setup. The
+early init validator that stopped every partial-payload run is cleared by the complete payload — see
+[`docs/BARE-METAL-RUN-1.md`](docs/BARE-METAL-RUN-1.md).
 
 Cleared batches are published by a deterministic runner and merged automatically when the pull
 request head is exactly the cleared commit; external pull requests are reviewed by hand.

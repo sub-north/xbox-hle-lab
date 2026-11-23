@@ -31,7 +31,7 @@ run (our race-kit rule).
 | L2 | **NOT MET** (verified negative) | same block reads `Game State: System Init` at the stop; no later state is ever emitted; `Frame: 0` |
 | L3 | NOT MET | zero `CreateCommandList` lines; the only `CommandList` hit is a `RSSetDepthBias` capability probe |
 | L4 | NOT MET | `presents: 0`, `frame_boundaries: 0` |
-| L5 | NOT MET | `presents: 0`, `shaders.unique: 0`, `audio.engines: 0` — no swapchain exists to capture |
+| L5 | NOT MET (run 1) | `presents: 0`, `shaders.unique: 96` (225 log lines), `audio.engines: 0` — pipelines are built, but no swapchain exists to capture |
 
 Trend (verified): stop RVA `+0x1E1CFE9 → +0x1E1D01B → +0x1D8E505 → +0x2237178` (×3) `→ +0x1CE6E13`
 (×2); stubs 30 → 6; `called_stubs` 1 → 0. Run 16 vs run 14 normalise to a 10-line diff, 4 of them the

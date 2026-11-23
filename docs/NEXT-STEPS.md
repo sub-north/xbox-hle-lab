@@ -8,8 +8,9 @@ reasoning we have not confirmed. Nothing here needs the title's data, and nothin
 
 The title runs unmodified under a console-to-PC HLE runtime (xcl). It clears XMem allocation, the
 D3D12 configure call and descriptor/heap creation, XGameRuntime, GameInput, the DirectStorage
-factory, and XPackage identity. It then stops inside **its own early init validator**, before the
-first engine frame. (verified)
+factory, and XPackage identity. A partial payload stops inside **its own early init validator**,
+before the first engine frame; with the complete payload that validator clears and the run builds
+graphics state. (verified)
 
 ## The blocker
 
@@ -25,9 +26,10 @@ first engine frame. (verified)
   `0x5E075C`, and the growth threshold is 55. (verified)
 - The keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among its entries. The
   earlier "the twelve keys miss" reading is refuted; there is no lookup miss to explain. (verified)
-- What remains is the install gate plus rollback: the pack has to be registered as a device before
-  this check runs, and a key that is present is then rejected by the interface check and the state
-  rolls back — which is why the scan stops. (hypothesis)
+- **Resolved (verified, run 1):** completeness is the gate, not registration. With the complete
+  208.6 GiB payload the validator does not fire at `+0x1CE6E13`; the run reaches graphics state and
+  stops on `STATUS_ILLEGAL_INSTRUCTION` (`0xC000001D`). What remains is that fault, not this check.
+  See [BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md).
 - Skipping the break does not advance: the title faults with `0xc0000005`, a write to address 0
   inside `vcruntime140`. The check therefore guards a real precondition used later; it is not a
   stale assert to jump. (recorded; no archived log)

@@ -29,7 +29,9 @@ earlier "only 8 of 12" limit is closed, and only the slot order of indices 8–1
 archive is **notes-only** linked to the child-open returning 0. That the stub is *why* `al=0` is a
 **hypothesis under test**, not a finding.
 
-**Prediction (inferred).** A real archive for that key should let both counters reach 12 and
-registration complete; the next stop is the observation to watch.
+**Confirmed (run 1).** With the complete payload both counters reach 12 and registration completes;
+the stop no longer lands here. The next stop is `STATUS_ILLEGAL_INSTRUCTION` (`0xC000001D`) after 91
+compute pipelines ([BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md)).
 
-The gate is per-archive, measured across two runs with one variable changed: [`ARCHIVE-GATE.md`](ARCHIVE-GATE.md).
+The gate is per-archive, measured across two runs with one variable changed, and cleared in a third
+with the complete set: [`ARCHIVE-GATE.md`](ARCHIVE-GATE.md).
