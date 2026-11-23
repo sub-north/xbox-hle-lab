@@ -14,10 +14,11 @@ Only these can contribute **code** to a GPL-2.0 xcl tree:
 | R0Y00/Xbox2Windows | MIT | copy-safe |
 | Ahmet-Dedeler/rage9-re, bcpack-rs | **MIT OR Apache-2.0** (dual) | copy-safe **as MIT** — take the MIT branch |
 | Dark3581/AnyBox | **GPL-2.0** | compatible |
-| brcly/TuxBox | Apache-2.0 | **no** — Apache-2.0 is GPLv2-incompatible (GPLv3-compatible only) |
+| brcly/TuxBox | **no licence declared** (no `LICENSE`, no `license` key in `Cargo.toml`, README silent — rechecked 2026-11-23; earlier "Apache-2.0" entry is stale) | **no** |
 | ItsNotRexed/Leonida | GPL-3.0 | no — different version; GPLv3 code cannot be combined into a GPL-2.0-only work |
 | drycheetah84/TomBox | none | no |
-| rpatty-dev/PercyStar / PercyScarlett | proprietary / non-commercial | no |
+| rpatty-dev/PercyStar | proprietary / non-commercial | no |
+| rpatty-dev/PercyScarlett | **GPL-2.0-only** (since `dd6ec590`, 2026-11-23T21:08Z) | **compatible — copyleft** (see below) |
 | Freminet/ScarlettX, jadeowaowa/scarlett-layer | none / Apache-2.0 | no — same Apache-2.0 barrier |
 
 Precisely: **Apache-2.0 is incompatible with GPL-2.0** but **compatible with GPL-3.0**. Its patent
@@ -27,6 +28,15 @@ bcpack-rs) is usable here because the MIT branch is GPLv2-compatible — dual li
 copy-safe, not the Apache option.
 
 Everything from a "no" row is **behaviour to reimplement**, never pasted code.
+
+**PercyScarlett, reclassified 2026-11-23.** Commit `dd6ec590` (an upstream commit announcing retail
+progress; relicense to GPL-2.0-only) moves it from *idea-only, no licence* to **GPL-2.0-only**. Code may
+now be taken, but GPL-2.0 is copyleft: anything derived from it — and any binary we ship containing it —
+must be GPL-2.0 as a whole. That is already our position (`patches/xcl` is GPL-2.0), so there is no new
+licence conflict; there is a **new obligation to track provenance** per hunk. Its evidence status does not
+change: it is still **external-report only** (no artifact, no log, no capture in the lab), so its claims
+remain unverified here. Note the same commit states it was written *after* xcl (GPL-2.0), so much of its
+content is downstream of our own baseline rather than independent work — take only what is genuinely new.
 
 ## 2. Verification levels
 
