@@ -6,8 +6,8 @@ Labels: **[observed]** = read directly from bytes/decompiler/listing (our *verif
 | Field | Value |
 |---|---|
 | Path | `<LAB>/dump/<vendor-package>/XboxBvhBuilder.dll` |
-| Size / MD5 | 884,224 bytes / `3C87063377B2EB77A070AD6E6EAAD4B4` |
-| SHA-256 | `99F803AC22C01EF329DDDB1D40BE67238D2A812D01E8D040B3CB5135BC23707E` (recomputed, matches REA) |
+| Size / MD5 | 884,224 bytes / MD5 withheld — held in lab record, not in repo |
+| SHA-256 | withheld — held in lab record, not in repo (884,224 B); recomputed, matches REA |
 | Image base | `0x180000000` **[observed]** |
 | Sections | `.text 0x180001000–0x180023FFF` (139 KB), `.rdata 0x180024000–0x1800D39FF` (700 KB), `.data`, `.pdata`, `.xbld`, `.rsrc`, `.reloc` |
 | Functions / exports / toolchain | 464 functions, 12 exports (entry RVAs in §4); `.xbld` records GXDK `April 2025 GXDK Update 5`, product build `10.0.26100.4125` **[observed]** |

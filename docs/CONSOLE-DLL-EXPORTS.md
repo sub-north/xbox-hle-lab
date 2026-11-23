@@ -7,9 +7,14 @@ Evidence (REA `inspect_native_exports`, `inspect_pe_resources`):
 
 | File | SHA-256 | Bytes | Format | Exports | Resources | Evidence IDs |
 |---|---|---|---|---|---|---|
-| XboxBvhBuilder.dll | `99f803ac22c01ef329dddb1d40be67238d2a812d01e8d040b3cb5135bc23707e` | 884224 | PE32+ / amd64 | 12 | 1 (RT_MANIFEST) | exports `ev_b6359281…e1d6a1`, resources `ev_5d427ba4…c3c045` |
-| amd_fidelityfx_upscaler_xbox.dll | `faff02f294a7e9149ce079dffe3dedbcabe99b1f180ab14222aa8689e00a75fa` | 786432 | PE32+ / amd64 | 5 | 1 (RT_VERSION) | exports `ev_46c55553…685976`, resources `ev_2a23e010…7db089` |
-| Bink2Scarlett.dll | `9eaf045d004cd7d6a8382aaff0c6ea23a29fec4ef8bfacd726b54f5bc26fafd0` | 255488 | PE32+ / amd64 | 74 | 0 | exports `ev_6d273c20…4f64ef8d`, resources `ev_b3968754…a4eaecda` |
+| XboxBvhBuilder.dll | withheld — hash held in lab record, not in repo (884,224 B) | 884224 | PE32+ / amd64 | 12 | 1 (RT_MANIFEST) | exports `ev_b6359281…e1d6a1`, resources `ev_5d427ba4…c3c045` |
+| amd_fidelityfx_upscaler_xbox.dll | withheld — hash held in lab record, not in repo (786,432 B) | 786432 | PE32+ / amd64 | 5 | 1 (RT_VERSION) | exports `ev_46c55553…685976`, resources `ev_2a23e010…7db089` |
+| Bink2Scarlett.dll | withheld — hash held in lab record, not in repo (255,488 B) | 255488 | PE32+ / amd64 | 74 | 0 | exports `ev_6d273c20…4f64ef8d`, resources `ev_b3968754…a4eaecda` |
+
+These are hashes of files that shipped inside the game package, so they identify the
+shipped artifact and are kept out of the public tree: each value above is recorded in the
+lab record. Identification is by name and byte size, which is enough to reproduce the
+table. The reads below are unchanged.
 
 Coverage for all three export reads: `complete`, `issues: []`, no forwarders, ordinal base 1,
 every export named (no ordinal-only rows).
