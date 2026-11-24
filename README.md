@@ -21,7 +21,9 @@ What is still missing is the picture. The screen shows front-end key art and men
 render, and a run still ends when the title's own stall detector fires: `0xc0000005` at
 `+0x23cf683` after a ~40 s stall. The last run presented 1 639 frames in 133 s. See
 [`docs/WHAT-STOPS-THE-LOAD.md`](docs/WHAT-STOPS-THE-LOAD.md) for the mechanism and what is ruled out,
-and [`docs/STALL-DETECTOR.md`](docs/STALL-DETECTOR.md) for the two rules behind the abort.
+and [`docs/STALL-DETECTOR.md`](docs/STALL-DETECTOR.md) for the two rules behind the abort. The compile
+load that fills that stall is priced in [`docs/PIPELINE-DEMAND.md`](docs/PIPELINE-DEMAND.md): ~200
+fresh compiles per run, one in flight after startup, ~3 per minute.
 
 Three changes produced this run, and only three. **Payload integrity**: the payload is staged and
 checked before the title starts, so these figures describe the title's own behaviour. **Address
