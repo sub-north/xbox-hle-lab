@@ -8,10 +8,10 @@ distributed as patches against the upstream GPL-2.0 project, not as a fork.
 
 ## Status
 
-The lab has demonstrated a GPU-PV VM exposing a D3D12 device, xcl binding the title's HLE imports,
-and the title reaching its own initialisation code and building graphics state. It has not produced a
-rendered game frame: the run with the complete payload builds 91 compute pipelines and stops on an
-instruction fault, with zero presents.
+The lab has run the title on bare metal against a full, hash-verified payload. It boots through its
+own front-end, reaches `Game State: Game Running` with a populated world (buildings, peds, vehicles,
+a live script thread and a real camera position), and presents 1 111 frames — but the display stays
+on a loading spinner, and the title dumps itself 30 s after its frame loop stops.
 
 - **2026-11-23 — first executable run.** The title's own code executed under xcl; the run log records
   the entry point and the stopping address.
@@ -20,9 +20,10 @@ instruction fault, with zero presents.
 - **2026-11-23 — crash-reporter assert cleared.** Staging the pack the title looks up at that point
   satisfied the lookup and moved the stop to the next gate.
 
-Current blocker: `STATUS_ILLEGAL_INSTRUCTION` (`0xC000001D`) at 7.254 s, after pipeline setup. The
-early init validator that stopped every partial-payload run is cleared by the complete payload — see
-[`docs/BARE-METAL-RUN-1.md`](docs/BARE-METAL-RUN-1.md).
+Current blocker: the frame loop halts while the simulation is still live. The title's own watchdog
+then deliberately crashes to force a diagnostic dump. See
+[`docs/WHAT-STOPS-THE-LOAD.md`](docs/WHAT-STOPS-THE-LOAD.md) for the mechanism and what is ruled out,
+and [`docs/STALL-DETECTOR.md`](docs/STALL-DETECTOR.md) for the two rules behind the abort.
 
 Cleared batches are published by a deterministic runner and merged automatically when the pull
 request head is exactly the cleared commit; external pull requests are reviewed by hand.
