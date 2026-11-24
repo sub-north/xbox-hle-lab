@@ -19,6 +19,11 @@ Running`, 22/600 peds, 24/700 cars, 6 910/22 500 buildings, a real camera and pl
 script thread. Then it aborted itself at `+0x23CF683` (write to address 0). See
 [BARE-METAL-RUN-6.md](BARE-METAL-RUN-6.md). (verified)
 
+**Run 7 is a negative result.** A solid-block fill for refused BCPack destinations works — the
+`filled_bytes` counters left zero for the first time — and it **halves throughput** (1 111 → 606
+presents over near-identical windows) with the **stop unchanged** at `+0x23CF683`, same registers.
+See [BARE-METAL-RUN-7.md](BARE-METAL-RUN-7.md). (measured)
+
 ## The blocker
 
 - The stop is `0xC0000005`, a write to `0x0`, at the title's RVA **`+0x23CF683`**, with the stack
@@ -26,9 +31,12 @@ script thread. Then it aborted itself at `+0x23CF683` (write to address 0). See
   (verified)
 - **Same stop, same stack, same signature** as ivall/xcl#505, an independent report on the same
   title build. (verified by comparison)
-- The abort arrives about 40 s after the last captured frame, while streaming is live and no
-  logged call has returned an error. That is consistent with a progress watchdog whose expected
-  counter never advances. The watchdog reading is **#505's**, not decoded here. (reported)
+- The abort is **scope start + 300 s**, not a fixed wall clock. A per-thread stack of QPC scopes is
+  compared against `300.0f` at RVA `0x6159E20`; any scope open 300 s fires the trap at `+0x23CF683`,
+  with no GPU signal in the predicate. Run 6 aborted at +442 s (scope ~+142 s), run 7 at +510 s
+  (scope ~+210 s), which is why the two gaps to the last frame differ. The timer is **verified** in
+  the decode; which scope stalls, and therefore whether it waits on GPU progress, is still open. The
+  GPU-progress reading is **#505's**. (verified mechanism, inferred scope identity)
 - **Resolved (inferred, strong):** the registry assert was a consequence of the torn archive, not a
   missing subsystem. With the archive intact the lookup is never reached. The run-5 advice to
   instrument that lookup is withdrawn for this stop. One boot so far; a repeat without the probe is
@@ -39,22 +47,24 @@ script thread. Then it aborted itself at `+0x23CF683` (write to address 0). See
 
 ## Three named leads
 
-1. **The GPU-progress watchdog.** Something in the title polls for progress and gives up ~30 s into
-   a stage that is not advancing. What would settle it: the name or address of the counter, or any
-   HLE path that services a periodic progress query for a submitted command list. A `Game State`
-   value at the abort would be ideal — #505 reported one, our parameter list does not carry it, so
-   we cannot yet say which stage the title thought it was in. (hypothesis + reported)
+1. **Which scope stalls, and for what.** The 300 s deadline is a CPU QPC scope timer (#505's
+   "GPU-progress watchdog" is the reading of *why* the scope stays open, not what the timer is). What
+   would settle it: a log of the scope table (RVA `0x6844A20`: `+4` open count, `+8` QPC stamps) at
+   the abort, or any HLE path that services a periodic progress query for a submitted command list. A
+   `Game State` value at the abort would help too — #505 reported one, our parameter list does not
+   carry it. (verified decode + hypothesis)
 2. **`ID3D12GraphicsCommandList10::#101`.** #505 names this call returning 0 as the suspected trigger.
    It does **not** appear in our unimplemented-call list, so we cannot confirm it from our own log.
    (reported) Our own per-frame unknowns are `#126`, `#142` and `#75` at exactly 1 111 calls each —
    one set per presented frame — and `ID3D12CommandAllocator::#9` at 1 116. They are the obvious
    candidates for a console-specific call whose absence stalls forward progress. Mapping any of
    these four slots to its console operation would be a real contribution. (verified counts)
-3. **The BCPack decoder.** Streaming is on the critical path and 512 requests were refused at the
-   stop: BC1 348, BC5 107, BC6H 1, BC7 56, plus a DirectStorage request failure. Until those blocks
-   decode, a whole class of textures never arrives, and a stage could be waiting on them. A
-   CPU-side BC1/BC5/BC6H/BC7 path, or a documented mapping from BCPack to the PC block formats, moves
-   this without needing the title. (verified counts)
+3. **The BCPack decoder.** Streaming is on the critical path and 512 requests were refused at run 6's
+   stop: BC1 348, BC5 107, BC6H 1, BC7 56, plus a DirectStorage request failure. Run 7 tested the
+   cheap version of this and it failed: a solid-block fill for refused destinations works (BC1 1.1 MB,
+   BC5 7.0 MB, BC7 4.7 MB written) but **halves** the present rate and leaves the stop identical. So
+   the refusal path is not the gate; real decoding (or a documented BCPack → PC block-format mapping)
+   is still untested and still worth doing. (verified counts, measured negative)
 
 ## What is ruled out
 
