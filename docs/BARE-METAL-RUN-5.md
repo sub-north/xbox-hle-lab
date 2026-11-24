@@ -7,7 +7,8 @@ ours.
 
 ## Setup
 
-Bed unchanged from runs 1–4: the separate Windows install on its own partition, the full payload, the
+Bed unchanged from runs 1–4: the separate Windows install on its own partition, the payload staged as
+in run 1 — size-checked only, with one archive later found torn (see run 1) — the
 vendor driver staged offline, the self-reporting harness with a completion marker, and the 15-minute
 cap. Network adapters were down (adapters up: 0) and the firewall rules applied; disk isolation again
 was not achieved (`0 volume(s) hidden; offlined disks: 0`), the residual earlier runs recorded too.

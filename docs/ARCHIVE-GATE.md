@@ -3,7 +3,8 @@
 **Measured (`ka1`, `lv1`, run 1).** Three runs. The first two, same binary in the same environment,
 differ in exactly one variable: whether the real archive for the seventh key was present; the
 registration loop stopped at a different key in each — and at the same instruction in both. The
-third, on a separate install with the complete payload, does not stop there.
+third, on a separate install with the payload fully staged — all files present, size-checked; run 1 is
+where the integrity limit is stated — does not stop there.
 
 ## The loop
 
