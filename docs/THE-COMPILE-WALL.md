@@ -31,8 +31,8 @@ against 3059 on `47efa2e`.
 
 ## Identifiers
 
-`0x6e3fd903765f4376` 1 097 020 B → 179.9 s · `0xe0654264d8ad6489` 607 276 B → 178.7 s ·
-`0x130fe330af5688bc` 289 572 B → 173.7 s · `0xa6bbf309e0e2767e` 513 236 B → 93.4 s.
+Four console compute shaders of 289 KB – 1.1 MB of translated DXIL, returning in 93.4–179.9 s;
+identities retained in the lab archive.
 
 ## Reproduce
 

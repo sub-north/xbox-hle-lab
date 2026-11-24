@@ -35,6 +35,9 @@ Identifiers are judged by kind, not together. Applied in PR #10.
   binary, so it identifies nothing. Publishing addresses is already this repository's convention —
   the console-DLL export tables — and removing them would destroy these records' usefulness as
   records.
+- **Console shader hashes are lab-only.** A 16-hex `fnv64` over a console shader container's bytes is a
+  content-derived fingerprint of shipped data, so it fails the test below exactly as a file hash does.
+  Publish sizes, timings and outcomes instead; keep the values in the lab archive.
 - **Hashes of our own artefacts are published.** Run logs, reports, captured blobs and extracted
   resource payloads are evidence we produced; their hashes prove provenance and stay in the tree.
 
