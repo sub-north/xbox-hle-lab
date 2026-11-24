@@ -173,11 +173,23 @@ This is the **same stop, same stack, same signature** as ivall/xcl#505, an indep
 same title build: same faulting offset, same four stack offsets, same `GPU Loc Sig` value. That
 match is **verified** by comparing the two records.
 
-The reading that this is the title's **GPU-progress watchdog** is **reported** by #505, not decoded
-here, and it is consistent with what we see: the abort arrives about 40 s after the last captured
-frame, after streaming has been active, with no unimplemented call returning an error that we log. #505 also
-names `ID3D12GraphicsCommandList10::#101` returning 0 as the suspected trigger; `#101` does **not**
-appear in this run's unimplemented list, so we cannot confirm that mechanism from our own log.
+**Correction (this page, and this run's pull request, first called the stop a "GPU-progress
+watchdog").** That label is **superseded**: the decode shows a **heartbeat stall detector** — a 1 Hz
+thread that aborts the title when its frame loop stops advancing — and this run's registers show it
+fired on the heartbeat rule, with no load scope open. See
+[STALL-DETECTOR.md](STALL-DETECTOR.md) for the two rules, the `rbp=0 rbx=0` evidence, the 29.2 s
+arithmetic and the confirming experiment. The superseded sentence, kept so the record shows what
+changed:
+
+> The reading that this is the title's **GPU-progress watchdog** is **reported** by #505, not decoded
+> here.
+
+So: the abort arrives about 29 s after the last present, which is the detector's built-in
+30-poll window, not a property of GPU progress. #505 names
+`ID3D12GraphicsCommandList10::#101` returning 0 as the suspected trigger; `#101` does **not** appear
+in this run's unimplemented list, so we cannot confirm that mechanism from our own log. What #505's
+match does establish is the same abort **site** — same offset, same stack, same diagnostic token —
+not the same cause.
 
 ## Honest limits
 
@@ -190,8 +202,10 @@ appear in this run's unimplemented list, so we cannot confirm that mechanism fro
 - **Rate is not a performance result.** 2.51 presents/s against run 5's ~4.7 is a single-boot number
   under active streaming, PSO translation and a 2048 MB coherent window. It is not a measurement of
   the build's cost.
-- **The watchdog name is borrowed.** Our decode says "the title aborted itself at this offset with
-  this telemetry". The mechanism (a progress counter expiring) is #505's claim.
+- **The watchdog name was borrowed, and it was wrong.** Our decode says the title **aborted itself on
+  purpose** at this offset, from a heartbeat stall detector, to force a diagnostic dump; this run's
+  registers place it on the no-scope rule, 29.2 s after the last present. #505's "GPU-progress"
+  reading of *why* the loop stalled stays reported. See [STALL-DETECTOR.md](STALL-DETECTOR.md).
 - **The telemetry is the title's, not ours.** `GPU Loc Sig`, `Data Version` and the branch strings are
   values the title's handler emitted; we publish them as observations, not as an identification of
   the build.
