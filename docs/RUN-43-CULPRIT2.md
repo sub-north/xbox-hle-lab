@@ -23,7 +23,7 @@ half decides how much of the first can be trusted.
 |---|---|
 | Presents | **6 887** |
 | Last presented frame | **6 860**, 3840×2160, format 28, 518 082 / 518 400 non-dark |
-| Rate | **30.0 fps** in 19 of 21 measurement windows; 29.1 / 29.9 / 29.3 / 30.0 in the last four |
+| Rate | **30.0 fps** in 18 of 21 measurement windows; 29.1 / 29.9 / 29.3 / 30.0 in the last four |
 | Frame dumps (in window) | **115** — 3 black, **112 non-black** |
 | Distinct images | **25** of 115: 3 identical black, **89 identical stills** (frames 200–5 480), then **22 distinct frames** (5 540–6 860) |
 | Pipelines / shaders | 1 131 translated pipelines, 19 251 unique shaders, 274 823 submissions, **0** XDXR errors |
