@@ -57,13 +57,14 @@ Two of the walls the lab has been fighting are invisible to the plain build:
 - **2 s guest-memory wait timeouts: absent.** Run 33 logged three; run 35's only `Wait64BitValueX`
   was bridged to the GPU queue and never expired.
 
-So neither the frame rate nor the BCPack paths need our patches. The death is a guest null write at
-`+0x23cf683` — **the same fault site as run 30**, after 33 s of present silence during two very large
-compute-PSO compiles (605 504 B / 41 855 ms and 545 700 B / 2 428 ms).
+So neither the frame rate nor the BCPack paths need our patches. The death is the guest's **own
+deliberate trap** at `+0x23cf683` (`mov dword [0],0x4d8bd421` — the same site that ended run 30),
+reached after 33 s of present silence during two very large compute-PSO compiles
+(605 504 B / 41 855 ms and 545 700 B / 2 428 ms). That is an assertion in the title, not a host fault.
 
 **Verdict:** a stock upstream build reaches the account picker and the intro splash art, presents
-3 075 4K frames at a locked 30 FPS, decodes real BCPack textures and dies on a null write — and on
-frame count and rate it is the **best run recorded so far**. Any future patch should be judged
-against these numbers, not run 24's.
+3 075 4K frames at a locked 30 FPS, decodes real BCPack textures, and then trips the title's own
+deliberate trap at `+0x23cf683` — and on frame count and rate it is the **best run recorded so far**.
+Any future patch should be judged against these numbers, not run 24's.
 
 Archive: `gta6-lab/archive/reports/baremetal/20261124-131839-run35-plain47efa2e/`.
