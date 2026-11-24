@@ -8,33 +8,53 @@ reasoning we have not confirmed. Nothing here needs the title's data, and nothin
 
 The title runs unmodified under a console-to-PC HLE runtime (xcl). It clears XMem allocation, the
 D3D12 configure call and descriptor/heap creation, XGameRuntime, GameInput, the DirectStorage
-factory, and XPackage identity. A partial payload stops inside **its own early init validator**,
-before the first engine frame; with the complete payload that validator clears and the run builds
-graphics state. (verified)
+factory, and XPackage identity. With the complete, hash-verified payload the early init validator
+clears, the run builds graphics state, and it now presents sustained frames of its own UI.
+
+**Run 6 changed the blocker.** With the one archive that had been torn replaced by a byte-identical
+copy, the ScriptStore registry assert at `+0x29DEFB1` **did not fire** — zero occurrences in the log,
+after three consecutive runs that terminated on it. The run went on to **1 111 presents in 442.7 s**,
+active streaming, and — in the title's own crash context — a **populated world**: `Game State: Game
+Running`, 22/600 peds, 24/700 cars, 6 910/22 500 buildings, a real camera and player position, one live
+script thread. Then it aborted itself at `+0x23CF683` (write to address 0). See
+[BARE-METAL-RUN-6.md](BARE-METAL-RUN-6.md). (verified)
 
 ## The blocker
 
-- An `int3` at the title's RVA **`+0x1CE6E13`**; the predicate it guards sits at **`+0x292D370`**.
+- The stop is `0xC0000005`, a write to `0x0`, at the title's RVA **`+0x23CF683`**, with the stack
+  `+0x4E4BA89`, `+0x2215C35`, `+0x71B9A20`, `+0x2215ECA` and `GPU Loc Sig` = `7333478d`.
   (verified)
-- The predicate scans records against a `flat_hash_map` at `[[rsi+0x2a8]+0x20]` — A is the 0x80-byte
-  instance (vtable `0x6301540`) held at `[rsi+0x2a8]`. All 16 of that map's control bytes read `0x80`,
-  the empty marker. (verified)
-- The twelve keys live in the descriptor at `[rsi+0x2b0]` (0x70 bytes): `{tag = 12, count = 12, list}`
-  at `+0x60`, and its own map at `+0x10` is **populated**: 4 buckets, 64 slots, **50** entries
-  (`0x32`, measured), with a live base pointer; 14 of its 16 control bytes are occupied. `+0x10` is the
-  bucket count the lookup consumes at `0x292D426`, `+0x14` the live entry count growth reads at
-  `0x5E075C`, and the growth threshold is 55. (verified)
-- The keys are **present** in that map: `joaat("common") = 0xac9e7e35` is among its entries. The
-  earlier "the twelve keys miss" reading is refuted; there is no lookup miss to explain. (verified)
-- **Resolved (verified, run 1):** completeness is the gate, not registration. With the complete
-  208.6 GiB payload the validator does not fire at `+0x1CE6E13`; the run reaches graphics state and
-  stops on `STATUS_ILLEGAL_INSTRUCTION` (`0xC000001D`). What remains is that fault, not this check.
-  See [BARE-METAL-RUN-1.md](BARE-METAL-RUN-1.md).
-- Skipping the break does not advance: the title faults with `0xc0000005`, a write to address 0
-  inside `vcruntime140`. The check therefore guards a real precondition used later; it is not a
-  stale assert to jump. (recorded; no archived log)
-- No runtime assert-disable flag is available: the image carries 572 compiled-in `int3` assert
-  sites, and this stop's guard is the map scan, not a settings byte. (verified by census)
+- **Same stop, same stack, same signature** as ivall/xcl#505, an independent report on the same
+  title build. (verified by comparison)
+- The abort arrives about 40 s after the last captured frame, while streaming is live and no
+  logged call has returned an error. That is consistent with a progress watchdog whose expected
+  counter never advances. The watchdog reading is **#505's**, not decoded here. (reported)
+- **Resolved (inferred, strong):** the registry assert was a consequence of the torn archive, not a
+  missing subsystem. With the archive intact the lookup is never reached. The run-5 advice to
+  instrument that lookup is withdrawn for this stop. One boot so far; a repeat without the probe is
+  still owed.
+- **Not a visible render.** The simulation was running in the world — pools populated, player on the
+  ground, a script thread live — but every captured frame is still the loading spinner. No frame
+  shows the world, and nothing here is interactive play.
+
+## Three named leads
+
+1. **The GPU-progress watchdog.** Something in the title polls for progress and gives up ~30 s into
+   a stage that is not advancing. What would settle it: the name or address of the counter, or any
+   HLE path that services a periodic progress query for a submitted command list. A `Game State`
+   value at the abort would be ideal — #505 reported one, our parameter list does not carry it, so
+   we cannot yet say which stage the title thought it was in. (hypothesis + reported)
+2. **`ID3D12GraphicsCommandList10::#101`.** #505 names this call returning 0 as the suspected trigger.
+   It does **not** appear in our unimplemented-call list, so we cannot confirm it from our own log.
+   (reported) Our own per-frame unknowns are `#126`, `#142` and `#75` at exactly 1 111 calls each —
+   one set per presented frame — and `ID3D12CommandAllocator::#9` at 1 116. They are the obvious
+   candidates for a console-specific call whose absence stalls forward progress. Mapping any of
+   these four slots to its console operation would be a real contribution. (verified counts)
+3. **The BCPack decoder.** Streaming is on the critical path and 512 requests were refused at the
+   stop: BC1 348, BC5 107, BC6H 1, BC7 56, plus a DirectStorage request failure. Until those blocks
+   decode, a whole class of textures never arrives, and a stage could be waiting on them. A
+   CPU-side BC1/BC5/BC6H/BC7 path, or a documented mapping from BCPack to the PC block formats, moves
+   this without needing the title. (verified counts)
 
 ## What is ruled out
 
@@ -42,20 +62,25 @@ Ten tested explanations are in [FALSIFIED.md](FALSIFIED.md), each with the run a
 killed it. Read that table before proposing a cause, and do not retest a row unless its "do not
 retest unless" condition is now met.
 
-## Three ways to help
+Two rows need an explicit update after run 6:
 
-1. **Describe a fresh per-title pack.** The title reads a per-title pack (`appdata0.rpf`-like)
-   during this init; the only copy here is the shipped 8,880-byte one. On a console that has run the
-   title once, list the pack's entries and say whether a pack of that size is seed data or user
-   state. Entries, not the file. Contents matter: zeroing the pack moves the fault to `+0x2237320`,
-   and a structurally valid count-0 RPF9 lands on the same fault, so presence is not enough.
-   (verified)
-2. **Document an HLE that populates a device/root map.** Point us at a runtime, loader stage,
-   storage-root lookup, or static/TLS initializer that seeds a map of device or root names before a
-   settings validator runs. A commit, a function name, or a note is enough. (hypothesis)
-3. **Reproduce and compare the probe.** Run the same build with `XCL_CRASH_PROBE=keys,stage,stage2`
-   (probe patch `0004`) and send the output: the map's 16 control bytes, the probed globals, and the
-   stage reads. Same values mean the same stop; different values are a lead. (verified method)
+- **"The registry assert is the gate."** Retired. It reproduces only on a torn or incomplete payload;
+  with the archive intact it is not reached. Do not resurrect the lookup-instrumentation plan.
+- **"Skipping the break does not advance."** That observation was made on the old payload. With the
+  intact archive the break is not present to skip, so it no longer describes the current run.
+
+## Reproduce and compare
+
+Run the same build on an intact payload, capture the first 30 s after the last frame, and send:
+
+- the stop offset and the full register set;
+- the title's crash parameters (`GPU Loc Sig`, `Data Version`, `Code Branch`, `Build Type`,
+  `Game Environment`);
+- the unimplemented-call list with counts.
+
+Same values mean the same stop; different values are a lead. A run on the build **without** the
+probe is the cleanest control, because it removes the instrumentation as a variable. (verified
+method)
 
 ## How to run
 
@@ -63,9 +88,9 @@ retest unless" condition is now met.
 xcl run <game folder> --
 ```
 
-with `XCL_NETWORK=0`, the probe patch applied, and a logged-in interactive desktop. SSH lands in
-session 0, where presentation and GameInput fail for reasons unrelated to this stop, so a session-0
-result is not comparable. (verified)
+with `XCL_NETWORK=0` and a logged-in interactive desktop. SSH lands in session 0, where presentation
+and GameInput fail for reasons unrelated to this stop, so a session-0 result is not comparable.
+(verified)
 
 ## What we will publish
 
