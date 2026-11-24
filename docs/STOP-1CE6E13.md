@@ -10,8 +10,8 @@
   hex-formatted field: the probe prints the header with `{:x?}`, so `+0x14 = 0x32` is 50. Two
   independent runs agree — `crc5` and `crc6` (`count-repro/RESULT.md`), one binary, byte-identical
   config — and each read the field twice, 200 ms apart, returning `50 / 50`; a mid-build mutation is
-  therefore excluded. The full 12-key FNV-1a64 fingerprint was identical in both runs
-  (`0xaaa5defa304819d6`).
+  therefore excluded. The full 12-key FNV-1a64 over the descriptor's key strings was identical in
+  both runs; the value is retained in the lab archive.
 - **Corrected: the `0x2a8`/`0x2b0` mix-up.** `0x70` sizes the descriptor at `[rsi+0x2b0]`, not the
   0x80-byte instance at `[rsi+0x2a8]`; `0x6195668` is the outer object's vtable, `0x6301540` the
   instance's. The `0x80` size is real (its allocation), not a probe read length.

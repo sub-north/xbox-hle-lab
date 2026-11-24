@@ -37,7 +37,10 @@ Identifiers are judged by kind, not together. Applied in PR #10.
   records.
 - **Console shader hashes are lab-only.** A 16-hex `fnv64` over a console shader container's bytes is a
   content-derived fingerprint of shipped data, so it fails the test below exactly as a file hash does.
-  Publish sizes, timings and outcomes instead; keep the values in the lab archive.
+  Publish sizes, timings and outcomes instead; keep the values in the lab archive. The split is by
+  subject, not by length: a fingerprint computed over shipped data (shader containers, settings
+  descriptors, shipped files) is withheld; a hash of an artefact we produced (a build, a log, a blob
+  our harness captured and deserialised) is allowed.
 - **Hashes of our own artefacts are published.** Run logs, reports, captured blobs and extracted
   resource payloads are evidence we produced; their hashes prove provenance and stay in the tree.
 
