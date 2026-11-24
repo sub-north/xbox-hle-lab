@@ -31,12 +31,16 @@ See [BARE-METAL-RUN-7.md](BARE-METAL-RUN-7.md). (measured)
   (verified)
 - **Same stop, same stack, same signature** as ivall/xcl#505, an independent report on the same
   title build. (verified by comparison)
-- The abort is **scope start + 300 s**, not a fixed wall clock. A per-thread stack of QPC scopes is
-  compared against `300.0f` at RVA `0x6159E20`; any scope open 300 s fires the trap at `+0x23CF683`,
-  with no GPU signal in the predicate. Run 6 aborted at +442 s (scope ~+142 s), run 7 at +510 s
-  (scope ~+210 s), which is why the two gaps to the last frame differ. The timer is **verified** in
-  the decode; which scope stalls, and therefore whether it waits on GPU progress, is still open. The
-  GPU-progress reading is **#505's**. (verified mechanism, inferred scope identity)
+- **The stop is a heartbeat stall detector, not a timer on the load scope.** A 1 Hz predicate thread
+  holds two rules: **A**, a load scope open for 300 s (float at RVA `0x6159E20`); **B**, no scope
+  open (`[0x71B6334] == 0`) *and* a heartbeat (`[0x71B6338]`) frozen for 30 polls. Run 6 faulted with
+  `rbp=0 rbx=0`, which only the no-scope path produces, so **rule B** fired: 29.2 s between the last
+  present (+413.2 s) and the abort (+442.4 s), i.e. 30 polls at 1 Hz. A probe that raised the 300 s
+  limit to `1800.0f` logged `scopes count=0` at +60 s **and** +240 s — no scope was ever open, so rule
+  A had no subject. The title then crashes itself deliberately (`mov dword [0], 0x4D8BD421`) to force
+  a diagnostic dump; the access violation is the dump trigger, not a title bug. (verified) Superseded
+  wording, kept so the record shows what changed: "The abort is **scope start + 300 s**, not a fixed
+  wall clock." See [STALL-DETECTOR.md](STALL-DETECTOR.md).
 - **Resolved (inferred, strong):** the registry assert was a consequence of the torn archive, not a
   missing subsystem. With the archive intact the lookup is never reached. The run-5 advice to
   instrument that lookup is withdrawn for this stop. One boot so far; a repeat without the probe is
@@ -47,12 +51,16 @@ See [BARE-METAL-RUN-7.md](BARE-METAL-RUN-7.md). (measured)
 
 ## Three named leads
 
-1. **Which scope stalls, and for what.** The 300 s deadline is a CPU QPC scope timer (#505's
-   "GPU-progress watchdog" is the reading of *why* the scope stays open, not what the timer is). What
-   would settle it: a log of the scope table (RVA `0x6844A20`: `+4` open count, `+8` QPC stamps) at
-   the abort, or any HLE path that services a periodic progress query for a submitted command list. A
-   `Game State` value at the abort would help too — #505 reported one, our parameter list does not
-   carry it. (verified decode + hypothesis)
+1. **Why the frame loop stalls.** This is the whole remaining question: the detector is a symptom, so
+   the target is whatever blocks the loop for 30 s. Three facts bear on it. Another lab reports
+   `Dispatch -> pso_async::resolve_wait -> p.cv.wait` with no timeout for this same stop — a blocking
+   wait nothing signals is exactly the shape rule B sees. (**reported**, from #505; not symbolized in
+   our build.) Our pipeline backlog at the stop is lopsided, `[26, 0, 58736]` (**verified
+   observation**, field meanings inferred). And one very large DXC compile dominates the window before
+   the stall (**verified measurement**, causal link inferred). What would settle it now: a **stack
+   sample 5 to 25 s after the last present** — inside the detector's 30 s window, before the dump
+   overwrites the evidence. A `Game State` value at the abort would help too; #505 reported one, our
+   parameter list does not carry it. (verified decode + reported chain)
 2. **`ID3D12GraphicsCommandList10::#101`.** #505 names this call returning 0 as the suspected trigger.
    It does **not** appear in our unimplemented-call list, so we cannot confirm it from our own log.
    (reported) Our own per-frame unknowns are `#126`, `#142` and `#75` at exactly 1 111 calls each —

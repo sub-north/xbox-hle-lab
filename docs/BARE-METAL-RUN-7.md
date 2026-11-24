@@ -91,29 +91,38 @@ rax=0x0 rcx=0x70024c348 rdx=0x1
 ## The mechanism correction this run forced
 
 Run 7 aborted 67.6 s later than run 6, which invited the reading that the fill bought 68 s of
-progress. It did not. **The abort time is not a fixed wall clock. It is scope start + 300 s.**
+progress. It did not. **The abort is not a fixed wall clock, and it is not a GPU check.**
 
-- Run 6 aborted at +442.4 s, so its timed scope opened at about +142 s.
-- Run 7 aborted at +510.0 s, so its timed scope opened at about +210 s.
+**Superseded — this page's first reading of it.** The text below was published in this page's original
+version and is withdrawn; it is kept so the record shows what changed:
 
-The 300 s figure is the limit in a **CPU QPC scope timer**: a per-thread stack of open scopes, each
-stamped with `QueryPerformanceCounter`, compared against a float limit of `300.0f` at RVA
-`0x6159E20`; any scope left open for 300 s fires the abort at `+0x23CF683`. There is no GPU signal
-in that predicate. (mechanism verified in the decode; the two scope-start times are inferred as
-abort minus 300 s, since the scope table is not logged)
+> The abort time is not a fixed wall clock. It is **scope start + 300 s**. Run 6 aborted at +442.4 s,
+> so its timed scope opened at about +142 s; run 7 aborted at +510.0 s, so its timed scope opened at
+> about +210 s.
+
+Both derivations are wrong. A probe that raised the float at `0x6159E20` from `300.0f` to `1800.0f`
+logged `scopes count=0` at +60 s **and** +240 s: no load scope was ever open, so the 300 s rule had no
+subject and could not have fired in these runs. The stop is a **heartbeat stall detector** — a 1 Hz
+thread that crashes the title on purpose (`mov dword [0], 0x4D8BD421`) when nothing has advanced for 30
+polls. The full mechanism, the `rbp=0 rbx=0` register evidence and the arithmetic are in
+[STALL-DETECTOR.md](STALL-DETECTOR.md).
+
+Corrected reading of this run: rule B fires about 29 s after the heartbeat stops, so run 7's frame loop
+stalled at about **+481 s** against run 6's about **+413 s**. The fill moved the stall later in
+wall-clock terms; it did not remove it. (inferred: abort timestamp minus the verified 30-poll window)
 
 Two consequences:
 
-1. **Run 6's "the abort arrives about 40 s after the last captured frame" is a property of when that
-   scope opened, not a constant.** Do not use the gap to the last frame as a fingerprint of the stop.
-2. **Calling it a GPU watchdog is a category error at the timer level.** What expires is a CPU-side
-   scope deadline; whether the scope is *waiting on* GPU progress is a separate, still-open question.
-   The run-6 page's "GPU-progress watchdog" label is ivall/xcl#505's reading of the cause and stays
-   **reported**, not decoded here.
+1. **The gap to the last frame is not a fingerprint.** It is about 29 s by construction of rule B, and
+   run 6's "about 40 s" was the same rule sampled less precisely. Do not compare the two as if they
+   measured different phenomena.
+2. **Calling it a GPU watchdog is a category error.** Nothing about GPU progress is read by the rule
+   that fires; the detector watches a heartbeat, and #505's "GPU-progress" label for *why* the loop
+   stalled stays **reported**, not decoded here.
 
-The practical consequence for the next run is that extending this timer buys load time without
-touching the stall: patching the limit at `0x6159E20` from `300.0f` to `1800.0f` gives the load 30
-minutes, and if the title still parks at the same scope nothing was fixed — only the deadline moved.
+The practical consequence for the next run changed too: extending the 300 s limit buys nothing at this
+stop, because rule B fires 30 s after the stall regardless. The load time has to be won from the stall
+itself, not from the deadline.
 
 ## What this rules out
 
@@ -121,7 +130,9 @@ minutes, and if the title still parks at the same scope nothing was fixed — on
   blocks, countably, and the stop is byte-identical. The refusal path is not the gate. (verified)
 - **"Filling refused textures will improve throughput."** It more than halves it on this bed.
   (measured, one boot per arm)
-- **"The 300 s abort is a GPU watchdog."** It is a CPU QPC scope deadline. (verified in decode)
+- **"The 300 s abort is a GPU watchdog."** It is neither a GPU check nor, in these runs, the 300 s
+  rule: it is a heartbeat stall detector firing its 30-poll rule. See
+  [STALL-DETECTOR.md](STALL-DETECTOR.md). (verified in decode)
 
 It does **not** rule out BCPack decoding as a lead: real decoding is a different code path from
 solid-block fill, and this run says nothing about what a decoded BC1/BC5/BC7 block does to the stop.
@@ -132,15 +143,17 @@ solid-block fill, and this run says nothing about what a decoded BC1/BC5/BC7 blo
   throughput drop is real for this run; its split between fill cost and tile pressure is not.
 - **Solid blocks are not textures.** `filled_bytes` measures placeholder writes. It is evidence the
   path fires, not evidence that a texture is correct, and not evidence the screen should change.
-- **The scope start times are arithmetic.** They are the abort instants minus a decoded 300 s limit.
-  No log line records when the scope opened; logging the scope table is the control that would
-  settle it.
+- **The stall times are arithmetic.** They are the abort instants minus a decoded 30-poll window at
+  1 Hz. No log line records when the heartbeat froze; a stack sample inside that window is the control
+  that would settle it.
 - **The ped/car inversion is unexplained.** 22 peds → 2 and 24 cars → 36 across the two arms is
   reported here as observed, with no mechanism attached.
 
 ## Next
 
-Run 8: turn the fill flag **off**, patch the `300.0f` limit at RVA `0x6159E20` to `1800.0f`, and give
-the load 30 minutes. If the abort moves to scope start + 1800 s with the same registers, the timer is
-confirmed as the only thing the last two runs measured; if the title uses the time to reach a
-different stop, that is the first new information since run 5's archive repair. (planned)
+Run 8: **do not re-patch the timer.** The `300.0f` → `1800.0f` experiment has already been run as a
+probe, and it returned `scopes count=0` at +60 s and +240 s: the 300 s rule is not the active one, so
+raising it cannot help. Arm the run to **sample the frame-loop stack at +5, +15 and +25 s after the
+last present**, inside the detector's 30 s window and before its deliberate dump. What that sample
+names — a condition variable, a fence, a compile — is the first new information since run 5's archive
+repair. See [STALL-DETECTOR.md](STALL-DETECTOR.md). (planned)
