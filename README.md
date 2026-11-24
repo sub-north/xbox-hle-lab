@@ -8,22 +8,28 @@ distributed as patches against the upstream GPL-2.0 project, not as a fork.
 
 ## Status
 
-The lab has run the title on bare metal against a full, hash-verified payload. It boots through its
-own front-end, reaches `Game State: Game Running` with a populated world (buildings, peds, vehicles,
-a live script thread and a real camera position), and presents 1 111 frames — but the display stays
-on a loading spinner, and the title dumps itself 30 s after its frame loop stops.
+The title now runs at **30 FPS** by the runtime's own present-rate counter: **30.7 presents/s**
+instantaneous and **17.8 presents/s** averaged over a full run, against a previous best of 8.4/s and
+2.5/s on most runs. The run is upstream main `63cdc25` plus our sub-2^40 placement fix alone — no
+compute-wait bound, no tolerance patch. The 40-bit BVH address wall is cleared in that same run
+(`XDXR` count 0, four acceleration structures accepted, the first at `0xed8b010000`), and the GPU
+driver's compiled pipeline blobs now persist and replay: `N compute pipelines made from the driver's
+blob of an earlier run (kept on disk)`, with per-PSO lines reading like `… (86776 B DXIL, 5 ms, the
+driver's blob of an earlier build)` where the same pipeline cost 681 ms to build cold.
 
-- **2026-11-23 — first executable run.** The title's own code executed under xcl; the run log records
-  the entry point and the stopping address.
-- **2026-11-23 — DirectStorage factory fix.** Accepting the console factory IIDs cleared
-  `E_NOINTERFACE` and moved the stop off the host boundary into the title.
-- **2026-11-23 — crash-reporter assert cleared.** Staging the pack the title looks up at that point
-  satisfied the lookup and moved the stop to the next gate.
-
-Current blocker: the frame loop halts while the simulation is still live. The title's own watchdog
-then deliberately crashes to force a diagnostic dump. See
+What is still missing is the picture. The screen shows front-end key art and menus, never a world
+render, and a run still ends when the title's own stall detector fires: `0xc0000005` at
+`+0x23cf683` after a ~40 s stall. The last run presented 1 639 frames in 133 s. See
 [`docs/WHAT-STOPS-THE-LOAD.md`](docs/WHAT-STOPS-THE-LOAD.md) for the mechanism and what is ruled out,
 and [`docs/STALL-DETECTOR.md`](docs/STALL-DETECTOR.md) for the two rules behind the abort.
+
+Three changes produced this run, and only three. **Payload integrity**: the payload is staged and
+checked before the title starts, so these figures describe the title's own behaviour. **Address
+placement**: the runtime now decides where its large write-watched reservations go, keeping their GPU
+views below 2^40, instead of walking eight fixed hints into the block it had just placed
+([`docs/BVH-WALL-CLEARED.md`](docs/BVH-WALL-CLEARED.md)). **Driver blob cache**: pipeline blobs
+written by an earlier run are found and reused — 5 ms replay against 681 ms cold, 29 → 56 entries
+across two runs — so a run spends its time presenting rather than rebuilding pipelines.
 
 Cleared batches are published by a deterministic runner and merged automatically when the pull
 request head is exactly the cleared commit; external pull requests are reviewed by hand.
