@@ -6,7 +6,8 @@ observation, not an artefact.
 
 ## Setup
 
-Bed unchanged from run 1: the separate Windows install on its own partition, full payload, vendor
+Bed unchanged from run 1: the separate Windows install on its own partition, the payload staged as in
+run 1 — size-checked, not hash-verified, and run 1 later showed one archive torn (see run 1) — vendor
 driver staged offline, self-reporting harness with a completion marker, 15-minute cap. Two things
 changed:
 

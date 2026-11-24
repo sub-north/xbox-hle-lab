@@ -6,9 +6,9 @@ Nothing here names or hashes a shipped file.
 
 ## Setup: one binary, two mechanisms
 
-Runs 3 and 4 used the same bed: the separate Windows install on its own partition, the full payload,
-the vendor driver staged offline, the self-reporting harness with a completion marker, and a
-15-minute cap. One thing changed.
+Runs 3 and 4 used the same bed: the separate Windows install on its own partition, the payload staged as
+in run 1 — size-checked only, with one archive later found torn (see run 1) — the vendor driver staged
+offline, the self-reporting harness with a completion marker, and a 15-minute cap. One thing changed.
 
 - **Run 3** ran the base build — the same runtime as run 2, upstream `main` at `7a033c8`, applied
   and built by hand, no unmerged work.
